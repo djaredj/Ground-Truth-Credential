@@ -1,0 +1,71 @@
+{
+  "_comment": "This is an annotated example of a GTC disclosure manifest. Comments (prefixed with _) are for illustration only and would not appear in a production manifest.",
+
+  "schema_version": "0.1",
+
+  "manifest_id": "gtc-glasswing-014-2026-XX-XX",
+  "_comment_id": "Format: gtc-[publication]-[issue]-[date]. Replace XX-XX with actual publication date.",
+
+  "created_at": "2026-08-12T00:00:00Z",
+
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+
+  "content": {
+    "title": "The Glasswing Translator, Issue 014",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-014.html",
+    "published_at": "2026-XX-XXT00:00:00Z",
+    "content_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML body content of the published page, excluding navigation and footer elements."
+  },
+
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "model_version": "claude-sonnet-4-6",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and killline. DJJ provided the analytical framework, the Verification Void concept, and all doctrinal positions. The structural claims are DJJ's. The prose is Claude's."
+  },
+
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "The model used to produce this analysis was built by Anthropic. Anthropic is the subject of this issue's analysis. The Verification Void this issue coins describes, among other things, the condition in which the framework governing Anthropic's own model evaluations is unavailable to the deployers who operate those models.",
+      "severity": "structural",
+      "mitigation": "The conflict is named in the publication's disclosure block. Structural claims are DJJ's independent analysis. The conflict is undeniable and named. Naming the tension does not resolve it."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote the prose. Anthropic is the subject. The deployer (DJJ) depends on the AI provider's tool to produce content analyzing that same provider.",
+      "severity": "structural",
+      "mitigation": "Disclosed in every Glasswing issue since Issue 001. Issue 014 carries the most specific disclosure the series has required."
+    },
+    {
+      "type": "regulatory_position",
+      "statement": "Anthropic reviewed and submitted edits to the draft EO 14409 voluntary AI model evaluation framework before it was delivered to the White House. That framework is now classified. The model used to produce this analysis was built by the company that co-authored the classified government thresholds this issue examines.",
+      "severity": "structural",
+      "mitigation": "None available. The classified status of the framework prevents independent verification by the deployer or the reader."
+    }
+  ],
+
+  "prior_manifests": [
+    {
+      "manifest_id": "gtc-glasswing-013-2026-XX-XX",
+      "url": "https://github.com/djaredj/ground-truth-credential/blob/main/manifests/glasswing-013.json"
+    }
+  ],
+
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/ground-truth-credential/blob/main/manifests/glasswing-014.json",
+    "verification_page": "https://djaredj.github.io/ground-truth-credential/verify/",
+    "git_commit": ""
+  },
+
+  "notes": "Issue 014 is the Glasswing Translator issue where the Verification Void concept was coined. This manifest formalizes the prose disclosures that appeared in the published issue into the GTC structured format."
+}
