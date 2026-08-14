@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GTC — Verify Disclosure</title>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <link rel="icon" href="GTC-symbol-icon-file.ico" type="image/x-icon">
   <style>
     @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap');
 
@@ -69,8 +69,9 @@
 
     .mark {
       width: 36px;
-      height: 36px;
+      height: auto;
       margin-bottom: 32px;
+      display: block;
     }
 
     h1 {
@@ -260,10 +261,8 @@
 <body>
 
   <div class="container">
-    <svg class="mark" viewBox="0 0 475 700" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    href="GTC-symbol-black.svg"
-      <rect x="0" y="100" width="400" height="400" rx="60"/>
-      
+    <svg class="mark" viewBox="0 0 506.54 747.23" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path fill="currentColor" d="M390.54,0H116C51.93,0,0,51.94,0,116v336.17l121.73,295.05h127.78l-87.36-282.21h228.39c64.06,0,116-51.94,116-116V116C506.54,51.94,454.61,0,390.54,0Z"/>
     </svg>
 
     <h1>Verify a Ground Truth Credential</h1>
@@ -305,8 +304,8 @@
       </p>
       <br>
       <p>
-        <a href="https://github.com/djaredj/ground-truth-credential">Read the protocol</a> ·
-        <a href="https://github.com/djaredj/ground-truth-credential/tree/main/schema">View the schema</a> ·
+        <a href="https://github.com/djaredj/Ground-Truth-Credential-">Read the protocol</a> ·
+        <a href="https://github.com/djaredj/Ground-Truth-Credential-/tree/main/schema">View the schema</a> ·
         <a href="https://www.cognitivefusion.systems">Cognitive Fusion</a>
       </p>
     </div>
@@ -317,19 +316,8 @@
   </footer>
 
   <script>
-    /*
-      Manifest registry.
-      
-      As you publish manifests to the /manifests/ directory, add each
-      content_hash here with its metadata. This is the lookup table
-      the verification page checks against.
-      
-      For a production version with many manifests, this could fetch
-      a JSON index file instead. For now, a static map is simplest
-      and has zero dependencies.
-    */
     const MANIFESTS = {
-      // Example entry — replace with real hashes as manifests are published:
+      // Add entries as manifests are published:
       //
       // "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855": {
       //   title: "The Glasswing Translator, Issue 014",
@@ -337,7 +325,7 @@
       //   deployer: "Dee Jared Johnson",
       //   aiSystem: "Anthropic Claude",
       //   publishedAt: "2026-08-12",
-      //   manifestUrl: "https://github.com/djaredj/ground-truth-credential/blob/main/manifests/glasswing-014.json"
+      //   manifestUrl: "https://github.com/djaredj/Ground-Truth-Credential-/blob/main/manifests/glasswing-014.json"
       // }
     };
 
@@ -387,7 +375,6 @@
       }
     }
 
-    // Allow Enter key to trigger verification
     document.getElementById('hash-input').addEventListener('keydown', function(e) {
       if (e.key === 'Enter') verify();
     });
