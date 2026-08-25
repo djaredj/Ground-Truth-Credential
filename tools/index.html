@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GTC Tools — Ground Truth Credential</title>
+<style>
+  :root {
+    --bg: #fafafa; --fg: #111; --muted: #666; --border: #ddd;
+    --accent: #000; --surface: #fff; --hover: #f5f5f5;
+    --success-bg: #f0fdf4; --success-border: #86efac; --success-fg: #166534;
+    --fail-bg: #fef2f2; --fail-border: #fca5a5; --fail-fg: #991b1b;
+    --warn-bg: #fffbeb; --warn-border: #fcd34d; --warn-fg: #92400e;
+    --mono: 'SF Mono','Cascadia Code','Fira Code',Consolas,monospace;
+    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+  }
+  @media(prefers-color-scheme:dark){:root{
+    --bg:#111;--fg:#e5e5e5;--muted:#999;--border:#333;
+    --accent:#fff;--surface:#1a1a1a;--hover:#222;
+    --success-bg:#052e16;--success-border:#166534;--success-fg:#86efac;
+    --fail-bg:#450a0a;--fail-border:#991b1b;--fail-fg:#fca5a5;
+    --warn-bg:#451a03;--warn-border:#92400e;--warn-fg:#fcd34d;
+  }}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:var(--sans);background:var(--bg);color:var(--fg);line-height:1.6}
+  .container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
+  h1{font-size:1.25rem;font-weight:600;letter-spacing:.02em}
+  .subtitle{color:var(--muted);font-size:.875rem;margin-bottom:1.5rem}
+  /* Tabs */
+  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:2rem}
+  .tab{padding:.625rem 1.25rem;font-size:.8125rem;font-weight:500;background:none;border:none;
+    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+    font-family:var(--sans);transition:all .15s}
+  .tab:hover{color:var(--fg)}
+  .tab.active{color:var(--fg);border-bottom-color:var(--accent)}
+  .panel{display:none}
+  .panel.active{display:block}
+  /* Form elements */
+  label{display:block;font-size:.75rem;font-weight:500;color:var(--muted);
+    margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.06em}
+  input[type="text"],input[type="url"],input[type="datetime-local"],
+  select,textarea{width:100%;font-family:var(--sans);font-size:.875rem;
+    padding:.5rem .625rem;border:1px solid var(--border);border-radius:4px;
+    background:var(--surface);color:var(--fg);outline:none;transition:border-color .15s}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:80px;font-family:var(--sans)}
+  .mono-input{font-family:var(--mono);font-size:.8125rem}
+  .field{margin-bottom:1rem}
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+  @media(max-width:600px){.field-row{grid-template-columns:1fr}}
+  .section-title{font-size:.8125rem;font-weight:600;text-transform:uppercase;
+    letter-spacing:.06em;margin:1.5rem 0 .75rem;padding-top:1rem;border-top:1px solid var(--border)}
+  .section-title:first-of-type{border-top:none;margin-top:0}
+  button,.btn{padding:.5rem 1.25rem;font-family:var(--sans);font-size:.875rem;
+    font-weight:500;background:var(--accent);color:var(--bg);border:none;
+    border-radius:4px;cursor:pointer;transition:opacity .15s}
+  button:hover,.btn:hover{opacity:.85}
+  .btn-secondary{background:var(--surface);color:var(--fg);border:1px solid var(--border)}
+  .btn-row{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
+  /* Drop zone */
+  .drop-zone{border:2px dashed var(--border);border-radius:6px;padding:2rem;
+    text-align:center;color:var(--muted);font-size:.875rem;cursor:pointer;
+    transition:all .15s}
+  .drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);color:var(--fg)}
+  .drop-zone .hash-result{font-family:var(--mono);font-size:.8125rem;
+    word-break:break-all;color:var(--fg);margin-top:.75rem;
+    padding:.5rem;background:var(--hover);border-radius:4px}
+  /* Output */
+  .output-box{background:var(--surface);border:1px solid var(--border);
+    border-radius:4px;padding:1rem;font-family:var(--mono);font-size:.75rem;
+    white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;
+    margin-top:1rem;line-height:1.5}
+  /* Result card */
+  .result{margin-top:1rem;padding:1rem;border-radius:4px;font-size:.875rem;display:none}
+  .result.match{display:block;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-fg)}
+  .result.no-match{display:block;background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-fg)}
+  .result .rt{font-weight:600;margin-bottom:.25rem}
+  .disclosures{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--success-border)}
+  .disclosures h3{font-size:.75rem;font-weight:600;margin-bottom:.375rem;text-transform:uppercase;letter-spacing:.04em}
+  .d-item{margin-bottom:.5rem;font-size:.8125rem;line-height:1.5}
+  .d-type{font-family:var(--mono);font-size:.7rem;opacity:.7}
+  /* Audit table */
+  .audit-table{width:100%;border-collapse:collapse;font-size:.8125rem;margin-top:1rem}
+  .audit-table th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted);padding:.5rem .375rem;border-bottom:1px solid var(--border)}
+  .audit-table td{padding:.5rem .375rem;border-bottom:1px solid var(--border);vertical-align:top}
+  .audit-table input[type="text"]{font-size:.8125rem;padding:.25rem .375rem}
+  .audit-table select{font-size:.8125rem;padding:.25rem .25rem}
+  .priority-high{color:var(--fail-fg);font-weight:600}
+  .priority-medium{color:var(--warn-fg);font-weight:500}
+  .priority-low{color:var(--muted)}
+  .audit-row .remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:.125rem .375rem}
+  .audit-row .remove-btn:hover{color:var(--fail-fg)}
+  .audit-summary{margin-top:1.5rem;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:4px}
+  .audit-summary h3{font-size:.8125rem;font-weight:600;margin-bottom:.5rem}
+  .audit-stat{display:flex;justify-content:space-between;font-size:.8125rem;padding:.25rem 0}
+  .audit-stat .val{font-weight:600}
+  /* Disclosure builder */
+  .disclosure-entry{background:var(--surface);border:1px solid var(--border);
+    border-radius:4px;padding:.75rem;margin-bottom:.75rem;position:relative}
+  .disclosure-entry .remove-disclosure{position:absolute;top:.5rem;right:.5rem;
+    background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem}
+  .disclosure-entry .remove-disclosure:hover{color:var(--fail-fg)}
+  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);
+    font-size:.75rem;color:var(--muted);text-align:center}
+  footer a{color:var(--muted)}
+  .help{font-size:.75rem;color:var(--muted);margin-top:.25rem;line-height:1.4}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>GTC Tools</h1>
+  <p class="subtitle">Create disclosure manifests, verify content, and audit your site. Everything runs in your browser — no data leaves your machine.</p>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('create')">Create Manifest</button>
+    <button class="tab" onclick="showPanel('verify')">Verify</button>
+    <button class="tab" onclick="showPanel('audit')">Site Audit</button>
+  </div>
+
+  <!-- ==================== CREATE ==================== -->
+  <div id="create" class="panel active">
+
+    <div class="section-title">1. Hash your content</div>
+    <div class="drop-zone" id="create-drop" onclick="document.getElementById('create-file-input').click()">
+      Drop your published file here, or click to select.<br>
+      <span style="font-size:.75rem">(HTML, PDF, image, document — any file. Nothing is uploaded. The hash is computed in your browser.)</span>
+      <input type="file" id="create-file-input" style="display:none" onchange="hashCreateFile(this)">
+      <div class="hash-result" id="create-hash-result" style="display:none"></div>
+    </div>
+
+    <div class="section-title">2. Your information</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="c-name">Your name</label>
+        <input type="text" id="c-name" placeholder="Dee Jared Johnson">
+      </div>
+      <div class="field">
+        <label for="c-org">Organization (optional)</label>
+        <input type="text" id="c-org" placeholder="Cognitive Fusion">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="c-url">Your URL</label>
+        <input type="url" id="c-url" placeholder="https://www.example.com">
+      </div>
+      <div class="field">
+        <label for="c-role">Your role</label>
+        <select id="c-role">
+          <option value="Author">Author</option>
+          <option value="Editor">Editor</option>
+          <option value="Publisher">Publisher</option>
+          <option value="Designer">Designer</option>
+          <option value="Developer">Developer</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="section-title">3. Content details</div>
+    <div class="field">
+      <label for="c-title">Content title</label>
+      <input type="text" id="c-title" placeholder="My Article Title">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="c-type">Content type</label>
+        <select id="c-type">
+          <option value="article">Article</option>
+          <option value="post">Post</option>
+          <option value="report">Report</option>
+          <option value="image">Image</option>
+          <option value="document">Document</option>
+          <option value="presentation">Presentation</option>
+          <option value="audio">Audio</option>
+          <option value="video">Video</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="c-pub-url">Published URL</label>
+        <input type="url" id="c-pub-url" placeholder="https://www.example.com/my-article">
+      </div>
+    </div>
+
+    <div class="section-title">4. AI system used</div>
+    <div class="field-row">
+      <div class="field">
+        <label for="c-provider">Provider</label>
+        <select id="c-provider" onchange="updateSystemOptions()">
+          <option value="Anthropic">Anthropic</option>
+          <option value="OpenAI">OpenAI</option>
+          <option value="Google">Google</option>
+          <option value="Meta">Meta</option>
+          <option value="Midjourney">Midjourney</option>
+          <option value="Stability AI">Stability AI</option>
+          <option value="Adobe">Adobe</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="c-system">System / model</label>
+        <input type="text" id="c-system" placeholder="Claude">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label for="c-model">Model version (optional)</label>
+        <input type="text" id="c-model" placeholder="claude-sonnet-4-6">
+      </div>
+      <div class="field">
+        <label for="c-usage-type">How was AI used?</label>
+        <select id="c-usage-type">
+          <option value="drafting">Drafting</option>
+          <option value="editing">Editing</option>
+          <option value="research">Research</option>
+          <option value="analysis">Analysis</option>
+          <option value="translation">Translation</option>
+          <option value="code_generation">Code generation</option>
+          <option value="image_generation">Image generation</option>
+          <option value="transcription">Transcription</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label for="c-usage-desc">Describe the AI's role</label>
+      <textarea id="c-usage-desc" placeholder="Be specific. Example: Claude drafted the analysis from my structural claims and editorial direction. The structural arguments are mine. The prose is Claude's."></textarea>
+    </div>
+
+    <div class="section-title">5. Disclosures — the conflicts that matter</div>
+    <p class="help" style="margin-bottom:.75rem">Each disclosure names a specific structural relationship or conflict. This is the layer that watermarks and Content Credentials don't provide. Be specific — "AI was used" is not a disclosure.</p>
+    <div id="disclosures-list"></div>
+    <button class="btn-secondary" onclick="addDisclosure()" style="font-size:.8125rem">+ Add disclosure</button>
+
+    <div class="section-title">6. Generate</div>
+    <div class="btn-row">
+      <button onclick="generateManifest()">Generate manifest</button>
+      <button class="btn-secondary" onclick="copyManifest()">Copy JSON</button>
+      <button class="btn-secondary" onclick="downloadManifest()">Download .json</button>
+    </div>
+    <div class="output-box" id="create-output" style="display:none"></div>
+  </div>
+
+  <!-- ==================== VERIFY ==================== -->
+  <div id="verify" class="panel">
+
+    <div class="section-title">Option A: Paste a hash</div>
+    <div class="field">
+      <label for="v-hash">Content SHA-256 hash</label>
+      <input type="text" id="v-hash" class="mono-input" placeholder="64-character hex string">
+    </div>
+    <button onclick="verifyHash()">Verify</button>
+
+    <div class="section-title">Option B: Drop a file to hash it</div>
+    <div class="drop-zone" id="verify-drop" onclick="document.getElementById('verify-file-input').click()">
+      Drop the published file here. The SHA-256 hash will be computed in your browser and checked automatically.
+      <input type="file" id="verify-file-input" style="display:none" onchange="hashVerifyFile(this)">
+    </div>
+
+    <div class="result" id="verify-result"></div>
+
+    <div class="section-title" style="margin-top:2rem">Load a custom manifest registry</div>
+    <p class="help">By default, this page checks against the Glasswing Translator manifests. To verify against your own manifests, paste your registry JSON below.</p>
+    <div class="field">
+      <textarea id="custom-registry" rows="4" class="mono-input" placeholder='{"content_hash": {"id":"manifest-id","title":"Title","url":"https://...","disclosures":[...]}}'></textarea>
+    </div>
+    <button class="btn-secondary" onclick="loadCustomRegistry()" style="font-size:.8125rem">Load registry</button>
+    <span id="registry-status" style="font-size:.75rem;color:var(--muted);margin-left:.5rem"></span>
+  </div>
+
+  <!-- ==================== AUDIT ==================== -->
+  <div id="audit" class="panel">
+    <p class="help" style="margin-bottom:1rem">Inventory every piece of AI-assisted content on your site. Identify conflicts, prioritize which items need manifests first, and export the results.</p>
+
+    <table class="audit-table" id="audit-table">
+      <thead>
+        <tr>
+          <th style="width:20%">Title / ID</th>
+          <th style="width:15%">URL</th>
+          <th style="width:10%">AI?</th>
+          <th style="width:12%">System</th>
+          <th style="width:10%">Subject overlap?</th>
+          <th style="width:10%">Financial?</th>
+          <th style="width:10%">Priority</th>
+          <th style="width:8%">Manifest?</th>
+          <th style="width:5%"></th>
+        </tr>
+      </thead>
+      <tbody id="audit-body"></tbody>
+    </table>
+
+    <div class="btn-row">
+      <button class="btn-secondary" onclick="addAuditRow()" style="font-size:.8125rem">+ Add row</button>
+      <button class="btn-secondary" onclick="autoClassify()" style="font-size:.8125rem">Auto-classify priorities</button>
+    </div>
+
+    <div class="audit-summary" id="audit-summary" style="display:none">
+      <h3>Audit Summary</h3>
+      <div class="audit-stat"><span>Total items</span><span class="val" id="a-total">0</span></div>
+      <div class="audit-stat"><span>AI-involved</span><span class="val" id="a-ai">0</span></div>
+      <div class="audit-stat"><span>Subject overlap</span><span class="val" id="a-overlap">0</span></div>
+      <div class="audit-stat"><span>Financial relationship</span><span class="val" id="a-financial">0</span></div>
+      <div class="audit-stat"><span>High priority (need manifests)</span><span class="val priority-high" id="a-high">0</span></div>
+      <div class="audit-stat"><span>Medium priority</span><span class="val priority-medium" id="a-med">0</span></div>
+      <div class="audit-stat"><span>Already have manifests</span><span class="val" id="a-has">0</span></div>
+    </div>
+
+    <div class="btn-row" style="margin-top:1rem">
+      <button onclick="updateAuditSummary()">Update summary</button>
+      <button class="btn-secondary" onclick="exportAuditCSV()">Export CSV</button>
+    </div>
+  </div>
+
+  <footer>
+    <a href="https://github.com/djaredj/Ground-Truth-Credential">Ground Truth Credential</a> · Dee Jared Johnson · CC BY 4.0<br>
+    All processing happens in your browser. No data is transmitted.
+  </footer>
+</div>
+
+<script>
+// ============ TABS ============
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ============ HASHING ============
+async function hashFile(file) {
+  const buffer = await file.arrayBuffer();
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Drag-and-drop for both zones
+['create-drop','verify-drop'].forEach(id => {
+  const zone = document.getElementById(id);
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', async e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const file = e.dataTransfer.files[0];
+    if (!file) return;
+    const hash = await hashFile(file);
+    if (id === 'create-drop') {
+      const el = document.getElementById('create-hash-result');
+      el.style.display = 'block';
+      el.textContent = hash;
+      window._createHash = hash;
+      window._createFileName = file.name;
+    } else {
+      document.getElementById('v-hash').value = hash;
+      verifyHash();
+    }
+  });
+});
+
+async function hashCreateFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const hash = await hashFile(file);
+  const el = document.getElementById('create-hash-result');
+  el.style.display = 'block';
+  el.textContent = hash;
+  window._createHash = hash;
+  window._createFileName = file.name;
+}
+async function hashVerifyFile(input) {
+  const file = input.files[0]; if (!file) return;
+  const hash = await hashFile(file);
+  document.getElementById('v-hash').value = hash;
+  verifyHash();
+}
+
+// ============ DISCLOSURES ============
+let disclosureCount = 0;
+function addDisclosure() {
+  disclosureCount++;
+  const id = disclosureCount;
+  const html = `<div class="disclosure-entry" id="disc-${id}">
+    <button class="remove-disclosure" onclick="document.getElementById('disc-${id}').remove()">remove</button>
+    <div class="field-row">
+      <div class="field">
+        <label>Conflict type</label>
+        <select id="disc-type-${id}">
+          <option value="provider_subject_overlap">Provider is the subject</option>
+          <option value="financial_relationship">Financial relationship</option>
+          <option value="editorial_dependency">Editorial dependency on provider</option>
+          <option value="data_access_asymmetry">Data access asymmetry</option>
+          <option value="recursive_disclosure">Recursive (content is about disclosure)</option>
+          <option value="regulatory_position">Provider holds regulatory position</option>
+          <option value="competitive_interest">Competitive interest</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Severity</label>
+        <select id="disc-sev-${id}">
+          <option value="structural">Structural (inherent, cannot be eliminated)</option>
+          <option value="material">Material (could influence conclusions)</option>
+          <option value="contextual">Contextual (unlikely to influence)</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Statement</label>
+      <textarea id="disc-stmt-${id}" rows="2" placeholder="Plain language. Name the entities. Be specific about the conflict."></textarea>
+    </div>
+    <div class="field">
+      <label>Mitigation</label>
+      <input type="text" id="disc-mit-${id}" placeholder="What you did about it. 'None — the conflict is structural' is valid.">
+    </div>
+  </div>`;
+  document.getElementById('disclosures-list').insertAdjacentHTML('beforeend', html);
+}
+
+// Start with one disclosure
+addDisclosure();
+
+function getDisclosures() {
+  const entries = document.querySelectorAll('.disclosure-entry');
+  return Array.from(entries).map(el => {
+    const id = el.id.replace('disc-','');
+    return {
+      type: document.getElementById(`disc-type-${id}`).value,
+      statement: document.getElementById(`disc-stmt-${id}`).value,
+      severity: document.getElementById(`disc-sev-${id}`).value,
+      mitigation: document.getElementById(`disc-mit-${id}`).value
+    };
+  }).filter(d => d.statement.trim());
+}
+
+// ============ GENERATE MANIFEST ============
+function generateManifest() {
+  const title = document.getElementById('c-title').value || 'Untitled';
+  const now = new Date().toISOString();
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+$/,'').substring(0,40);
+  const dateStr = now.substring(0,10);
+
+  const manifest = {
+    schema_version: "0.1",
+    manifest_id: `gtc-${slug}-${dateStr}`,
+    created_at: now,
+    deployer: {
+      name: document.getElementById('c-name').value,
+      organization: document.getElementById('c-org').value || undefined,
+      url: document.getElementById('c-url').value || undefined,
+      role: document.getElementById('c-role').value
+    },
+    content: {
+      title: title,
+      type: document.getElementById('c-type').value,
+      url: document.getElementById('c-pub-url').value || undefined,
+      published_at: now,
+      content_hash: window._createHash || "[hash your file first]",
+      hash_method: "SHA-256",
+      hash_scope: window._createFileName
+        ? `Full file bytes of ${window._createFileName}`
+        : "Full file bytes of the published content."
+    },
+    ai_system: {
+      provider: document.getElementById('c-provider').value,
+      system: document.getElementById('c-system').value,
+      model_version: document.getElementById('c-model').value || undefined,
+      usage_type: document.getElementById('c-usage-type').value,
+      usage_description: document.getElementById('c-usage-desc').value
+    },
+    disclosures: getDisclosures(),
+    prior_manifests: [],
+    verification: {
+      manifest_url: "",
+      verification_page: "",
+      git_commit: ""
+    }
+  };
+
+  // Clean undefined fields
+  const clean = JSON.parse(JSON.stringify(manifest, (k,v) => v === undefined || v === '' ? undefined : v));
+
+  window._generatedManifest = JSON.stringify(clean, null, 2);
+  const output = document.getElementById('create-output');
+  output.style.display = 'block';
+  output.textContent = window._generatedManifest;
+}
+
+function copyManifest() {
+  if (!window._generatedManifest) { generateManifest(); }
+  navigator.clipboard.writeText(window._generatedManifest);
+}
+
+function downloadManifest() {
+  if (!window._generatedManifest) { generateManifest(); }
+  const blob = new Blob([window._generatedManifest], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const title = document.getElementById('c-title').value || 'manifest';
+  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40);
+  a.href = url; a.download = `${slug}.json`; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function updateSystemOptions() {
+  const provider = document.getElementById('c-provider').value;
+  const system = document.getElementById('c-system');
+  const defaults = {
+    'Anthropic':'Claude','OpenAI':'GPT','Google':'Gemini','Meta':'Llama',
+    'Midjourney':'Midjourney','Stability AI':'Stable Diffusion','Adobe':'Firefly'
+  };
+  if (defaults[provider]) system.value = defaults[provider];
+}
+
+// ============ VERIFY ============
+let REGISTRY = {
+  "29471bf99ce28554f6f413550b08cebc16157fdf97a1b5a51b0938347a74f76e":{id:"gtc-glasswing-001",title:"The Glasswing Translator, Issue 001 — The Forward-Deployed Prediction Error",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-001.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue. Anthropic is discussed as a subject. The conflict is structural."},{type:"editorial_dependency",statement:"Claude wrote the prose. Anthropic is discussed. The structural claims and the Cognitive Fusion framework are DJJ's."}]},
+  "2c127147be3c2d8a93723daf77a572e3215f64123d6201ddd49aae62ba39bbe3":{id:"gtc-glasswing-002",title:"The Glasswing Translator, Issue 002 — The Protocol That Disclaimed Itself",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-002.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue. Anthropic is discussed."},{type:"editorial_dependency",statement:"Claude wrote this. Anthropic is discussed. The structural claims are DJJ's."}]},
+  "a6b01c8a1978113d6fc731f66ba217bd90a2fc16ecf87ad552a28b4c9db3a4c3":{id:"gtc-glasswing-003",title:"The Glasswing Translator, Issue 003 — Containment Is Not Oversight",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-003.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on containment and oversight of AI systems including Anthropic's."}]},
+  "12ea8eedd48a89ce9cff552f081f9ef80972c40944a63da7c654782bdc8ecf2d":{id:"gtc-glasswing-004",title:"The Glasswing Translator, Issue 004 — The Disclosure Regime Collision",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-004.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue analyzing disclosure regime collisions that apply to Anthropic's products."}]},
+  "70e8622da43d0cc37624b984a2de4d4cc5886c221064c715c698fffde8af6342":{id:"gtc-glasswing-005",title:"The Glasswing Translator, Issue 005 — The Indemnity Gap",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-005.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on the indemnity gap that applies to Anthropic's deployment terms."}]},
+  "a72fe2720a93c40d6f6248acce6822141da459014fb4f650f236aef672102767":{id:"gtc-glasswing-006",title:"The Glasswing Translator, Issue 006 — Runtime Reversibility",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-006.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on runtime reversibility — a principle that applies to Claude itself."}]},
+  "fe2b2b142ec2bc2240f9ce5859a672742ed90d608d90406e9f6c1e2bbdc3234f":{id:"gtc-glasswing-007",title:"The Glasswing Translator, Issue 007 — Edge Governance",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-007.json",disclosures:[{type:"provider_subject_overlap",statement:"This issue analyzes enforcement actions directed at Anthropic. The conflict is doubled twice over."}]},
+  "03d1b5c81c3bd4bb23ef352c40e733dc424d429832c8b4a5ffae3ada4630fc12":{id:"gtc-glasswing-008",title:"The Glasswing Translator, Issue 008 — Self-Funded Assurance",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-008.json",disclosures:[{type:"provider_subject_overlap",statement:"This issue examines Anthropic's classifier and CJS framework. The model analyzing a verification framework is made by the framework's maker."}]},
+  "186ddffd475de0179029cf06a05307aeacee4f78c20903c1c34ca2ffd6867d12":{id:"gtc-glasswing-009",title:"The Glasswing Translator, Issue 009 — Pilot-Posture Persistence",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-009.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed in this issue and in companion GDN-003. The conflict is structural."}]},
+  "5ff4980c3296500ed0f3ba6ed9ea53c7d02384da63c930d83b709fead87fbf75":{id:"gtc-glasswing-010",title:"The Glasswing Translator, Issue 010 — Phantom Control",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-010.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed as a Project Glasswing participant and as the maker of the drafting tool."}]},
+  "e02da4217f8fcd6bd0c40ffa102bca7067e11d5891b294f38c4053697160b000":{id:"gtc-glasswing-011",title:"The Glasswing Translator, Issue 011 — Execution Drift",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-011.json",disclosures:[{type:"provider_subject_overlap",statement:"An Anthropic researcher and AI system co-produced a result cited in a policy report this issue examines."}]},
+  "5971c8616ac742aef33c9d7b105ec814fab06ef82a3f205baa5c210e26aa6bda":{id:"gtc-glasswing-012",title:"The Glasswing Translator, Issue 012 — Record Drift",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-012.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed in the context of its Mythos model and Project Glasswing."}]},
+  "242d9323ce65674d3cbb6b28d6481e9856521b8c467393837ca48dbcb64c09cc":{id:"gtc-glasswing-013",title:"The Glasswing Translator, Issue 013 — Assurance Collapse",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-013.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic disclosed that Claude Mythos 5 published a malicious package during a safety evaluation. This issue examines that event using the tool made by the same company."}]},
+  "a512c21415db96c7919a4465a142c3246834d0129191e2763ca1fb6a7e6a6322":{id:"gtc-glasswing-014",title:"The Glasswing Translator, Issue 014 — Verification Void",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-014.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic co-authored the classified EO 14409 framework governing evaluation of frontier AI models including Claude."},{type:"regulatory_position",statement:"The classified status of the framework prevents independent verification by the deployer or the reader."}]},
+  "c05388d8b15a2496a6595bca320250dbd393905c21cd18d644184a020474e5d9":{id:"gtc-glasswing-015",title:"The Glasswing Translator, Issue 015 — Accountability Void",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-015.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is a signatory to CISA's agentic AI guidance, a CAISI participant, and the developer of Claude Code."}]},
+  "48064126468578c59085fd2352ee74cb7552882a8b77929ec2e1589a8dc237f6":{id:"gtc-glasswing-016",title:"The Glasswing Translator, Issue 016 — Authorization Dissolution",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-016.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic published the research on Claude agent malware escalation that this issue examines."},{type:"recursive_disclosure",statement:"Anthropic is a founding AAIF participant and MCP co-steward. This issue examines both. Three-part disclosure."}]}
+};
+
+function verifyHash() {
+  const input = document.getElementById('v-hash').value.trim().toLowerCase();
+  const result = document.getElementById('verify-result');
+  if (!input || !/^[a-f0-9]{64}$/.test(input)) {
+    result.className = 'result no-match';
+    result.innerHTML = '<div class="rt">Invalid hash</div><p>Enter a 64-character SHA-256 hex string.</p>';
+    return;
+  }
+  const match = REGISTRY[input];
+  if (match) {
+    let dhtml = '';
+    if (match.disclosures && match.disclosures.length) {
+      dhtml = '<div class="disclosures"><h3>Deployer Disclosures</h3>';
+      for (const d of match.disclosures) {
+        dhtml += `<div class="d-item"><span class="d-type">${d.type}</span><br>${d.statement}</div>`;
+      }
+      dhtml += '</div>';
+    }
+    result.className = 'result match';
+    result.innerHTML = `<div class="rt">Match found</div>
+      <p><strong>${match.title}</strong></p>
+      <p>Manifest ID: <code>${match.id}</code></p>
+      <p style="margin-top:.5rem"><a href="${match.url}" target="_blank" rel="noopener" style="color:inherit;font-family:var(--mono);font-size:.8125rem">View full manifest →</a></p>
+      ${dhtml}`;
+  } else {
+    result.className = 'result no-match';
+    result.innerHTML = `<div class="rt">No matching manifest</div>
+      <p>No GTC disclosure manifest was found for this content hash. The content may not be registered, or the file may have been modified since the manifest was created.</p>`;
+  }
+}
+
+function loadCustomRegistry() {
+  const status = document.getElementById('registry-status');
+  try {
+    const custom = JSON.parse(document.getElementById('custom-registry').value);
+    const count = Object.keys(custom).length;
+    Object.assign(REGISTRY, custom);
+    status.textContent = `Loaded ${count} entries.`;
+    status.style.color = 'var(--success-fg)';
+  } catch(e) {
+    status.textContent = 'Invalid JSON.';
+    status.style.color = 'var(--fail-fg)';
+  }
+}
+
+// ============ AUDIT ============
+let auditRowCount = 0;
+function addAuditRow(data) {
+  auditRowCount++;
+  const r = auditRowCount;
+  const d = data || {};
+  const row = `<tr class="audit-row" id="ar-${r}">
+    <td><input type="text" id="ar-t-${r}" value="${d.title||''}" placeholder="Article title"></td>
+    <td><input type="text" id="ar-u-${r}" value="${d.url||''}" placeholder="URL" style="font-size:.75rem"></td>
+    <td><select id="ar-ai-${r}"><option value="Yes" ${d.ai==='Yes'?'selected':''}>Yes</option><option value="No" ${d.ai==='No'?'selected':''}>No</option><option value="Partial" ${d.ai==='Partial'?'selected':''}>Partial</option><option value="Unknown" ${d.ai==='Unknown'?'selected':''}>Unknown</option></select></td>
+    <td><input type="text" id="ar-sys-${r}" value="${d.system||''}" placeholder="Claude, GPT..." style="font-size:.75rem"></td>
+    <td><select id="ar-ov-${r}"><option value="No">No</option><option value="Yes" ${d.overlap==='Yes'?'selected':''}>Yes</option></select></td>
+    <td><select id="ar-fin-${r}"><option value="No">No</option><option value="Yes" ${d.financial==='Yes'?'selected':''}>Yes</option></select></td>
+    <td><select id="ar-pri-${r}"><option value="">—</option><option value="High" ${d.priority==='High'?'selected':''}>High</option><option value="Medium" ${d.priority==='Medium'?'selected':''}>Medium</option><option value="Low" ${d.priority==='Low'?'selected':''}>Low</option></select></td>
+    <td><select id="ar-man-${r}"><option value="No">No</option><option value="Yes" ${d.manifest==='Yes'?'selected':''}>Yes</option></select></td>
+    <td><button class="remove-btn" onclick="document.getElementById('ar-${r}').remove()">✕</button></td>
+  </tr>`;
+  document.getElementById('audit-body').insertAdjacentHTML('beforeend', row);
+}
+
+// Start with 3 empty rows
+addAuditRow(); addAuditRow(); addAuditRow();
+
+function getAuditData() {
+  const rows = document.querySelectorAll('.audit-row');
+  return Array.from(rows).map(row => {
+    const id = row.id.replace('ar-','');
+    return {
+      title: document.getElementById(`ar-t-${id}`).value,
+      url: document.getElementById(`ar-u-${id}`).value,
+      ai: document.getElementById(`ar-ai-${id}`).value,
+      system: document.getElementById(`ar-sys-${id}`).value,
+      overlap: document.getElementById(`ar-ov-${id}`).value,
+      financial: document.getElementById(`ar-fin-${id}`).value,
+      priority: document.getElementById(`ar-pri-${id}`).value,
+      manifest: document.getElementById(`ar-man-${id}`).value
+    };
+  }).filter(r => r.title.trim());
+}
+
+function autoClassify() {
+  const rows = document.querySelectorAll('.audit-row');
+  rows.forEach(row => {
+    const id = row.id.replace('ar-','');
+    const ai = document.getElementById(`ar-ai-${id}`).value;
+    const overlap = document.getElementById(`ar-ov-${id}`).value;
+    const financial = document.getElementById(`ar-fin-${id}`).value;
+    const priSel = document.getElementById(`ar-pri-${id}`);
+    if (ai === 'No') { priSel.value = 'Low'; return; }
+    if (overlap === 'Yes' || financial === 'Yes') { priSel.value = 'High'; return; }
+    if (ai === 'Yes' || ai === 'Partial') { priSel.value = 'Medium'; return; }
+    priSel.value = 'Low';
+  });
+  updateAuditSummary();
+}
+
+function updateAuditSummary() {
+  const data = getAuditData();
+  document.getElementById('a-total').textContent = data.length;
+  document.getElementById('a-ai').textContent = data.filter(r => r.ai === 'Yes' || r.ai === 'Partial').length;
+  document.getElementById('a-overlap').textContent = data.filter(r => r.overlap === 'Yes').length;
+  document.getElementById('a-financial').textContent = data.filter(r => r.financial === 'Yes').length;
+  document.getElementById('a-high').textContent = data.filter(r => r.priority === 'High').length;
+  document.getElementById('a-med').textContent = data.filter(r => r.priority === 'Medium').length;
+  document.getElementById('a-has').textContent = data.filter(r => r.manifest === 'Yes').length;
+  document.getElementById('audit-summary').style.display = 'block';
+}
+
+function exportAuditCSV() {
+  const data = getAuditData();
+  const headers = ['Title','URL','AI Involvement','AI System','Subject Overlap','Financial Relationship','Priority','Manifest Exists'];
+  const csvRows = [headers.join(',')];
+  data.forEach(r => {
+    csvRows.push([r.title,r.url,r.ai,r.system,r.overlap,r.financial,r.priority,r.manifest]
+      .map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'gtc-audit.csv'; a.click();
+  URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>
