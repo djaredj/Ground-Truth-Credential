@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "gtc-glasswing-014",
+  "created_at": "2026-08-25T00:00:00Z",
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+  "content": {
+    "title": "The Glasswing Translator, Issue 014 \u2014 Verification Void",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-014.html",
+    "content_hash": "a512c21415db96c7919a4465a142c3246834d0129191e2763ca1fb6a7e6a6322",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML file bytes of the published page."
+  },
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and analytical framework. The structural claims are DJJ's. The prose is Claude's."
+  },
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "Anthropic reviewed and submitted edits to the draft EO 14409 voluntary AI model evaluation framework before it was delivered to the White House. That framework \u2014 now classified \u2014 governs the pre-release evaluation of frontier AI models including Claude. The model used to produce this analysis was built by the company that co-authored the classified government thresholds this issue examines.",
+      "severity": "structural",
+      "mitigation": "The Verification Void this issue coins describes the condition in which the framework governing Anthropic's own model evaluations is unavailable to the deployers who operate those models. That is not a hypothetical conflict. It is the structural condition this issue names. Naming the tension does not resolve it."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote this. Anthropic is the subject. The structural claims about the Verification Void are DJJ's. The prose is Claude's. The conflict is undeniable and named.",
+      "severity": "structural",
+      "mitigation": "Naming the tension does not resolve it."
+    },
+    {
+      "type": "regulatory_position",
+      "statement": "Anthropic co-authored a classified government framework that governs evaluation of its own models. The deployer (DJJ) cannot independently verify the thresholds that govern the tool used to produce this analysis.",
+      "severity": "structural",
+      "mitigation": "None available. The classified status prevents independent verification."
+    }
+  ],
+  "prior_manifests": [
+    {
+      "manifest_id": "gtc-glasswing-013",
+      "url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-013.json"
+    }
+  ],
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-014.json",
+    "verification_page": "https://djaredj.github.io/Ground-Truth-Credential/verify/",
+    "git_commit": ""
+  },
+  "notes": "Retroactive GTC manifest for Glasswing Translator Issue 014. Generated 2026-08-25 from the published HTML file. Disclosure text extracted from the issue's own disclosure section."
+}

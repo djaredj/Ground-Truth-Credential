@@ -1,0 +1,57 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "gtc-glasswing-016",
+  "created_at": "2026-08-25T00:00:00Z",
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+  "content": {
+    "title": "The Glasswing Translator, Issue 016 \u2014 Authorization Dissolution",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-016.html",
+    "content_hash": "48064126468578c59085fd2352ee74cb7552882a8b77929ec2e1589a8dc237f6",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML file bytes of the published page."
+  },
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and analytical framework. The structural claims are DJJ's. The prose is Claude's."
+  },
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "Anthropic published the research on Claude agent malware escalation that this issue examines. The structural claims about what that research reveals for deployer governance are DJJ's. The research, prose, and analysis are Claude's. The publication examines governance conditions that apply to Claude's own deployment context.",
+      "severity": "structural",
+      "mitigation": "Disclosed. The conflict is tripled in this issue."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote this. Anthropic is discussed. The structural claims are DJJ's.",
+      "severity": "structural",
+      "mitigation": "Naming the tension does not resolve it."
+    },
+    {
+      "type": "recursive_disclosure",
+      "statement": "Anthropic is a founding participant in the AAIF and a co-steward of the MCP protocol. This issue examines both. The disclosure obligation is the same one the series has carried since CF-034.",
+      "severity": "structural",
+      "mitigation": "Three-part disclosure block \u2014 the most extensive in the series."
+    }
+  ],
+  "prior_manifests": [
+    {
+      "manifest_id": "gtc-glasswing-015",
+      "url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-015.json"
+    }
+  ],
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-016.json",
+    "verification_page": "https://djaredj.github.io/Ground-Truth-Credential/verify/",
+    "git_commit": ""
+  },
+  "notes": "Retroactive GTC manifest for Glasswing Translator Issue 016. Generated 2026-08-25 from the published HTML file. Disclosure text extracted from the issue's own disclosure section."
+}

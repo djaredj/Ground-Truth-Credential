@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "gtc-glasswing-015",
+  "created_at": "2026-08-25T00:00:00Z",
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+  "content": {
+    "title": "The Glasswing Translator, Issue 015 \u2014 Accountability Void",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-015.html",
+    "content_hash": "c05388d8b15a2496a6595bca320250dbd393905c21cd18d644184a020474e5d9",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML file bytes of the published page."
+  },
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and analytical framework. The structural claims are DJJ's. The prose is Claude's."
+  },
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "Anthropic builds Claude models including the one that produced this analysis. Anthropic is an active participant in the agentic AI governance space this issue examines \u2014 a signatory to CISA's agentic AI guidance, a participant in CAISI pre-deployment testing agreements, and the developer of agents including Claude Code.",
+      "severity": "structural",
+      "mitigation": "Disclosed. Naming the tension does not resolve it."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote this. Anthropic is discussed. The structural claims are DJJ's.",
+      "severity": "structural",
+      "mitigation": "Naming the tension does not resolve it."
+    }
+  ],
+  "prior_manifests": [
+    {
+      "manifest_id": "gtc-glasswing-014",
+      "url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-014.json"
+    }
+  ],
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-015.json",
+    "verification_page": "https://djaredj.github.io/Ground-Truth-Credential/verify/",
+    "git_commit": ""
+  },
+  "notes": "Retroactive GTC manifest for Glasswing Translator Issue 015. Generated 2026-08-25 from the published HTML file. Disclosure text extracted from the issue's own disclosure section."
+}

@@ -1,0 +1,51 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "gtc-glasswing-012",
+  "created_at": "2026-08-25T00:00:00Z",
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+  "content": {
+    "title": "The Glasswing Translator, Issue 012 \u2014 Record Drift",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-012.html",
+    "content_hash": "5971c8616ac742aef33c9d7b105ec814fab06ef82a3f205baa5c210e26aa6bda",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML file bytes of the published page."
+  },
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and analytical framework. The structural claims are DJJ's. The prose is Claude's."
+  },
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "Anthropic is discussed in the context of its Mythos model and Project Glasswing. The conflict is structural.",
+      "severity": "structural",
+      "mitigation": "No financial relationship with Anthropic. Naming the tension does not resolve it."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote this. Anthropic is discussed. The structural claims about Record Drift and the verification gap are DJJ's.",
+      "severity": "structural",
+      "mitigation": "Naming the tension does not resolve it."
+    }
+  ],
+  "prior_manifests": [
+    {
+      "manifest_id": "gtc-glasswing-011",
+      "url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-011.json"
+    }
+  ],
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-012.json",
+    "verification_page": "https://djaredj.github.io/Ground-Truth-Credential/verify/",
+    "git_commit": ""
+  },
+  "notes": "Retroactive GTC manifest for Glasswing Translator Issue 012. Generated 2026-08-25 from the published HTML file. Disclosure text extracted from the issue's own disclosure section."
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": "0.1",
+  "manifest_id": "gtc-glasswing-001",
+  "created_at": "2026-08-25T00:00:00Z",
+  "deployer": {
+    "name": "Dee Jared Johnson",
+    "organization": "Cognitive Fusion",
+    "url": "https://www.cognitivefusion.systems",
+    "role": "Author"
+  },
+  "content": {
+    "title": "The Glasswing Translator, Issue 001 \u2014 The Forward-Deployed Prediction Error",
+    "type": "article",
+    "url": "https://www.cognitivefusion.systems/glasswing-001.html",
+    "content_hash": "29471bf99ce28554f6f413550b08cebc16157fdf97a1b5a51b0938347a74f76e",
+    "hash_method": "SHA-256",
+    "hash_scope": "Full HTML file bytes of the published page."
+  },
+  "ai_system": {
+    "provider": "Anthropic",
+    "system": "Claude",
+    "usage_type": "drafting",
+    "usage_description": "Claude drafted the prose from DJJ's structural claims, editorial direction, and analytical framework. The structural claims are DJJ's. The prose is Claude's."
+  },
+  "disclosures": [
+    {
+      "type": "provider_subject_overlap",
+      "statement": "The drafting of this issue was assisted by Claude, made by Anthropic \u2014 the same Anthropic discussed as a subject. The conflict is structural: the tool used to produce the analysis is made by a company whose governance conduct the framework examines.",
+      "severity": "structural",
+      "mitigation": "Disclosed in Section VII. First issue in the series; disclosure practice established."
+    },
+    {
+      "type": "editorial_dependency",
+      "statement": "Claude wrote the prose. Anthropic is discussed. The structural claims and the Cognitive Fusion framework are DJJ's.",
+      "severity": "structural",
+      "mitigation": "Naming the tension does not resolve it. Disclosed openly."
+    }
+  ],
+  "prior_manifests": [],
+  "verification": {
+    "manifest_url": "https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-001.json",
+    "verification_page": "https://djaredj.github.io/Ground-Truth-Credential/verify/",
+    "git_commit": ""
+  },
+  "notes": "Retroactive GTC manifest for Glasswing Translator Issue 001. Generated 2026-08-25 from the published HTML file. Disclosure text extracted from the issue's own disclosure section."
+}
