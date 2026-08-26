@@ -14,28 +14,26 @@
     "disclosures"
   ],
   "properties": {
-
     "schema_version": {
       "type": "string",
       "const": "0.1",
       "description": "Version of the GTC manifest schema. The visual mark is version-independent; versioning lives here."
     },
-
     "manifest_id": {
       "type": "string",
       "description": "Unique identifier for this manifest. Format: gtc-[content-identifier]-[YYYY-MM-DD]. Example: gtc-glasswing-014-2026-08-12."
     },
-
     "created_at": {
       "type": "string",
       "format": "date-time",
       "description": "ISO 8601 timestamp of manifest creation. Git commit timestamp provides independent verification."
     },
-
     "deployer": {
       "type": "object",
       "description": "The person or entity that produced and published the content. The deployer is the party making the disclosure, not the AI provider.",
-      "required": ["name"],
+      "required": [
+        "name"
+      ],
       "properties": {
         "name": {
           "type": "string",
@@ -56,11 +54,13 @@
         }
       }
     },
-
     "content": {
       "type": "object",
       "description": "Metadata about the content this manifest accompanies.",
-      "required": ["title", "content_hash"],
+      "required": [
+        "title",
+        "content_hash"
+      ],
       "properties": {
         "title": {
           "type": "string",
@@ -68,7 +68,18 @@
         },
         "type": {
           "type": "string",
-          "enum": ["article", "post", "report", "image", "document", "presentation", "audio", "video", "other"],
+          "enum": [
+            "article",
+            "post",
+            "report",
+            "image",
+            "document",
+            "presentation",
+            "audio",
+            "video",
+            "pdf",
+            "other"
+          ],
           "description": "Content format category."
         },
         "url": {
@@ -93,14 +104,33 @@
         "hash_scope": {
           "type": "string",
           "description": "What was hashed. Example: full HTML of published page, raw text body excluding navigation, PDF file bytes."
+        },
+        "platform": {
+          "type": "string",
+          "description": "Social media platform where the content is published. Example: LinkedIn, X / Twitter, Instagram. Used when content.type is post."
+        },
+        "content_format": {
+          "type": "string",
+          "enum": [
+            "text",
+            "image",
+            "both",
+            "video",
+            "pdf",
+            "audio",
+            "doc"
+          ],
+          "description": "The media format of the social post. Distinguishes a text-only post from an image post, mixed post, video, PDF/carousel, audio, or document when content.type is post."
         }
       }
     },
-
     "ai_system": {
       "type": "object",
       "description": "The AI system(s) used in producing the content.",
-      "required": ["provider", "system"],
+      "required": [
+        "provider",
+        "system"
+      ],
       "properties": {
         "provider": {
           "type": "string",
@@ -116,7 +146,17 @@
         },
         "usage_type": {
           "type": "string",
-          "enum": ["drafting", "editing", "research", "analysis", "translation", "code_generation", "image_generation", "transcription", "other"],
+          "enum": [
+            "drafting",
+            "editing",
+            "research",
+            "analysis",
+            "translation",
+            "code_generation",
+            "image_generation",
+            "transcription",
+            "other"
+          ],
           "description": "How the AI system was used in content production."
         },
         "usage_description": {
@@ -125,14 +165,16 @@
         }
       }
     },
-
     "disclosures": {
       "type": "array",
       "minItems": 1,
-      "description": "Structured conflict declarations. Each disclosure names a specific structural relationship or conflict between the deployer, the AI provider, and the content's subject matter. This is the core of GTC — the layer that provider-side provenance does not provide.",
+      "description": "Structured conflict declarations. Each disclosure names a specific structural relationship or conflict between the deployer, the AI provider, and the content's subject matter. This is the core of GTC \u2014 the layer that provider-side provenance does not provide.",
       "items": {
         "type": "object",
-        "required": ["type", "statement"],
+        "required": [
+          "type",
+          "statement"
+        ],
         "properties": {
           "type": {
             "type": "string",
@@ -154,7 +196,11 @@
           },
           "severity": {
             "type": "string",
-            "enum": ["structural", "material", "contextual"],
+            "enum": [
+              "structural",
+              "material",
+              "contextual"
+            ],
             "description": "Severity classification. Structural: the conflict is inherent to the production method and cannot be mitigated. Material: the conflict could influence the content's conclusions. Contextual: the relationship exists but is unlikely to influence the content."
           },
           "mitigation": {
@@ -164,7 +210,6 @@
         }
       }
     },
-
     "prior_manifests": {
       "type": "array",
       "description": "References to GTC manifests for earlier content in the same publication or series. Creates a verifiable disclosure chain.",
@@ -183,7 +228,6 @@
         }
       }
     },
-
     "verification": {
       "type": "object",
       "description": "How to verify this manifest.",
@@ -204,7 +248,6 @@
         }
       }
     },
-
     "notes": {
       "type": "string",
       "description": "Optional free-text field for additional context not covered by structured fields."
