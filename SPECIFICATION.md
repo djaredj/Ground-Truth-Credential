@@ -126,6 +126,54 @@ Metadata fields (format-dependent):
 
 ---
 
+## 4.6 On Social Media Posts
+
+Social media content presents three placement contexts not fully addressed in §4.1–4.4. The GTC Tools social credentialer implements these rules; manual placement must follow them.
+
+- **Text-only posts**
+
+The mark is appended at the end of the post text as a styled superscript rendered in the platform's default sans-serif font stack. The display form is `GTC` in superscript. In plain-text clipboard contexts where font styling cannot be carried, the mark is represented as `[GTC]` — a bracketed plain-text fallback that survives platform reformatting and copy-paste.
+
+The mark never appears mid-post. It appears once, at the end of the full text block.
+
+- **Image posts**
+
+The mark follows §4.1 (image placement rules). Default position is top-left, inset by one clear-space unit. The deployer moves to an alternate corner when another provenance mark (C2PA CR badge, platform watermark) already occupies the default corner. The GTC Tools auto-contrast mode samples the actual image luminance at the target corner and selects black or white accordingly — manual placement must do the same.
+
+- **Mixed posts (text + image)**
+
+Both placements are applied: the mark appears on the image per image rules AND is appended to the text per text-only rules. This is intentional — the two marks serve different verification surfaces. A reader who screenshots the image and strips the text still has the mark; a reader who copies the text and loses the image still has the mark.
+
+- **Video posts**
+
+The GTC mark is composited onto the video cover frame (thumbnail), not burned into the video file itself. The credentialed cover frame is uploaded to the platform as the video thumbnail. The manifest's `content_hash` is the SHA-256 of the video file bytes; the `hash_scope` field must state this explicitly.
+
+- **PDF / carousel posts**
+
+The mark is composited onto the cover page or first slide and uploaded as the cover image. The manifest's `content_hash` is the SHA-256 of the PDF or presentation file bytes; `hash_scope` must state this explicitly.
+
+- **Audio posts**
+
+No visual mark is applied to the audio file itself. The mark appears on any accompanying cover art or post text. The manifest's `content_hash` is the SHA-256 of the audio file bytes.
+
+- **Platform coverage**
+
+GTC is platform-agnostic. The C2PA CR badge is limited to images on LinkedIn. GTC applies to all content formats (text, image, video, PDF, audio, document) on all platforms (LinkedIn, X / Twitter, Instagram, Facebook, Threads, Bluesky, Mastodon, YouTube, TikTok, and others). The `content.platform` field in the manifest records which platform the post was published on.
+
+- **Manifest fields for social posts**
+
+Social post manifests must include:
+
+| Field | Value |
+|---|---|
+| `content.type` | `post` |
+| `content.platform` | Platform name (e.g. `LinkedIn`) |
+| `content.content_format` | `text`, `image`, `both`, `video`, `pdf`, `audio`, or `doc` |
+| `content.content_hash` | SHA-256 of the text body (text posts) or file bytes (media posts) |
+| `content.hash_scope` | Explicit description of what was hashed |
+
+---
+
 ## 5. Prohibitions
 
 The GTC mark must NOT be:
@@ -178,3 +226,4 @@ The visual mark does not carry a version indicator. Versioning lives in the data
 | Version | Date | Changes |
 |---|---|---|
 | 0.1 | 2026-08-12 | Initial scaffold. Mark form, color, sizing, placement, prohibitions, manifest linkage, versioning. |
+| 0.1.1 | 2026-08-26 | Added §4.6: social media placement rules for text, image, mixed, video, PDF/carousel, and audio posts. Added platform coverage note. Added social manifest field table. |
