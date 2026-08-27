@@ -1,664 +1,1712 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>GTC Tools — Ground Truth Credential</title>
-<style>
-  :root {
-    --bg: #fafafa; --fg: #111; --muted: #666; --border: #ddd;
-    --accent: #000; --surface: #fff; --hover: #f5f5f5;
-    --success-bg: #f0fdf4; --success-border: #86efac; --success-fg: #166534;
-    --fail-bg: #fef2f2; --fail-border: #fca5a5; --fail-fg: #991b1b;
-    --warn-bg: #fffbeb; --warn-border: #fcd34d; --warn-fg: #92400e;
-    --mono: 'SF Mono','Cascadia Code','Fira Code',Consolas,monospace;
-    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
-  }
-  @media(prefers-color-scheme:dark){:root{
-    --bg:#111;--fg:#e5e5e5;--muted:#999;--border:#333;
-    --accent:#fff;--surface:#1a1a1a;--hover:#222;
-    --success-bg:#052e16;--success-border:#166534;--success-fg:#86efac;
-    --fail-bg:#450a0a;--fail-border:#991b1b;--fail-fg:#fca5a5;
-    --warn-bg:#451a03;--warn-border:#92400e;--warn-fg:#fcd34d;
-  }}
-  *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:var(--sans);background:var(--bg);color:var(--fg);line-height:1.6}
-  .container{max-width:760px;margin:0 auto;padding:2rem 1.5rem}
-  h1{font-size:1.25rem;font-weight:600;letter-spacing:.02em}
-  .subtitle{color:var(--muted);font-size:.875rem;margin-bottom:1.5rem}
-  /* Tabs */
-  .tabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:2rem}
-  .tab{padding:.625rem 1.25rem;font-size:.8125rem;font-weight:500;background:none;border:none;
-    color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
-    font-family:var(--sans);transition:all .15s}
-  .tab:hover{color:var(--fg)}
-  .tab.active{color:var(--fg);border-bottom-color:var(--accent)}
-  .panel{display:none}
-  .panel.active{display:block}
-  /* Form elements */
-  label{display:block;font-size:.75rem;font-weight:500;color:var(--muted);
-    margin-bottom:.25rem;text-transform:uppercase;letter-spacing:.06em}
-  input[type="text"],input[type="url"],input[type="datetime-local"],
-  select,textarea{width:100%;font-family:var(--sans);font-size:.875rem;
-    padding:.5rem .625rem;border:1px solid var(--border);border-radius:4px;
-    background:var(--surface);color:var(--fg);outline:none;transition:border-color .15s}
-  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
-  textarea{resize:vertical;min-height:80px;font-family:var(--sans)}
-  .mono-input{font-family:var(--mono);font-size:.8125rem}
-  .field{margin-bottom:1rem}
-  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
-  @media(max-width:600px){.field-row{grid-template-columns:1fr}}
-  .section-title{font-size:.8125rem;font-weight:600;text-transform:uppercase;
-    letter-spacing:.06em;margin:1.5rem 0 .75rem;padding-top:1rem;border-top:1px solid var(--border)}
-  .section-title:first-of-type{border-top:none;margin-top:0}
-  button,.btn{padding:.5rem 1.25rem;font-family:var(--sans);font-size:.875rem;
-    font-weight:500;background:var(--accent);color:var(--bg);border:none;
-    border-radius:4px;cursor:pointer;transition:opacity .15s}
-  button:hover,.btn:hover{opacity:.85}
-  .btn-secondary{background:var(--surface);color:var(--fg);border:1px solid var(--border)}
-  .btn-row{display:flex;gap:.5rem;margin-top:1rem;flex-wrap:wrap}
-  /* Drop zone */
-  .drop-zone{border:2px dashed var(--border);border-radius:6px;padding:2rem;
-    text-align:center;color:var(--muted);font-size:.875rem;cursor:pointer;
-    transition:all .15s}
-  .drop-zone:hover,.drop-zone.dragover{border-color:var(--accent);color:var(--fg)}
-  .drop-zone .hash-result{font-family:var(--mono);font-size:.8125rem;
-    word-break:break-all;color:var(--fg);margin-top:.75rem;
-    padding:.5rem;background:var(--hover);border-radius:4px}
-  /* Output */
-  .output-box{background:var(--surface);border:1px solid var(--border);
-    border-radius:4px;padding:1rem;font-family:var(--mono);font-size:.75rem;
-    white-space:pre-wrap;word-break:break-all;max-height:400px;overflow-y:auto;
-    margin-top:1rem;line-height:1.5}
-  /* Result card */
-  .result{margin-top:1rem;padding:1rem;border-radius:4px;font-size:.875rem;display:none}
-  .result.match{display:block;background:var(--success-bg);border:1px solid var(--success-border);color:var(--success-fg)}
-  .result.no-match{display:block;background:var(--fail-bg);border:1px solid var(--fail-border);color:var(--fail-fg)}
-  .result .rt{font-weight:600;margin-bottom:.25rem}
-  .disclosures{margin-top:.75rem;padding-top:.75rem;border-top:1px solid var(--success-border)}
-  .disclosures h3{font-size:.75rem;font-weight:600;margin-bottom:.375rem;text-transform:uppercase;letter-spacing:.04em}
-  .d-item{margin-bottom:.5rem;font-size:.8125rem;line-height:1.5}
-  .d-type{font-family:var(--mono);font-size:.7rem;opacity:.7}
-  /* Audit table */
-  .audit-table{width:100%;border-collapse:collapse;font-size:.8125rem;margin-top:1rem}
-  .audit-table th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;
-    color:var(--muted);padding:.5rem .375rem;border-bottom:1px solid var(--border)}
-  .audit-table td{padding:.5rem .375rem;border-bottom:1px solid var(--border);vertical-align:top}
-  .audit-table input[type="text"]{font-size:.8125rem;padding:.25rem .375rem}
-  .audit-table select{font-size:.8125rem;padding:.25rem .25rem}
-  .priority-high{color:var(--fail-fg);font-weight:600}
-  .priority-medium{color:var(--warn-fg);font-weight:500}
-  .priority-low{color:var(--muted)}
-  .audit-row .remove-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem;padding:.125rem .375rem}
-  .audit-row .remove-btn:hover{color:var(--fail-fg)}
-  .audit-summary{margin-top:1.5rem;padding:1rem;background:var(--surface);border:1px solid var(--border);border-radius:4px}
-  .audit-summary h3{font-size:.8125rem;font-weight:600;margin-bottom:.5rem}
-  .audit-stat{display:flex;justify-content:space-between;font-size:.8125rem;padding:.25rem 0}
-  .audit-stat .val{font-weight:600}
-  /* Disclosure builder */
-  .disclosure-entry{background:var(--surface);border:1px solid var(--border);
-    border-radius:4px;padding:.75rem;margin-bottom:.75rem;position:relative}
-  .disclosure-entry .remove-disclosure{position:absolute;top:.5rem;right:.5rem;
-    background:none;border:none;color:var(--muted);cursor:pointer;font-size:.75rem}
-  .disclosure-entry .remove-disclosure:hover{color:var(--fail-fg)}
-  footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--border);
-    font-size:.75rem;color:var(--muted);text-align:center}
-  footer a{color:var(--muted)}
-  .help{font-size:.75rem;color:var(--muted);margin-top:.25rem;line-height:1.4}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>GTC Tools — Ground Truth Credential</title>
+  <style>
+    /* ─── TOKENS ─────────────────────────────────────────────── */
+    :root {
+      --black:   #0a0a0a;
+      --white:   #f7f7f5;
+      --mid:     #e8e6e1;
+      --rule:    #d0cec9;
+      --ink:     #1a1a1a;
+      --muted:   #6b6963;
+      --danger:  #c0392b;
+      --success: #1a6b3a;
+      --radius:  4px;
+      --pad:     32px;
+      --mono:    'Courier New', Courier, monospace;
+      --sans:    'Inter', system-ui, -apple-system, sans-serif;
+    }
+    @media (max-width: 600px) { :root { --pad: 16px; } }
+
+    /* ─── RESET ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+    body { font-family: var(--sans); background: var(--white); color: var(--ink); min-height: 100vh; }
+
+    /* ─── HEADER ─────────────────────────────────────────────── */
+    header {
+      border-bottom: 2px solid var(--black);
+      padding: 16px var(--pad);
+      display: flex; align-items: center; gap: 14px;
+    }
+    .gtc-logo { width: 30px; height: 30px; flex-shrink: 0; }
+    header h1 { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+    header h1 span { font-weight: 400; color: var(--muted); letter-spacing: 0; text-transform: none; }
+    @media (max-width: 440px) { header h1 span { display: none; } }
+
+    /* ─── TABS ───────────────────────────────────────────────── */
+    .tab-bar {
+      display: flex;
+      border-bottom: 1px solid var(--rule);
+      padding: 0 var(--pad);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tab-bar::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      padding: 13px 16px;
+      white-space: nowrap;
+      font-family: var(--sans);
+      font-size: 12px; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      border: none; background: none; cursor: pointer;
+      color: var(--muted);
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      min-height: 44px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active { color: var(--black); border-bottom-color: var(--black); font-weight: 700; }
+    .tab-new {
+      font-size: 9px; background: var(--black); color: var(--white);
+      padding: 2px 5px; border-radius: 3px; margin-left: 5px;
+      letter-spacing: 0.06em; vertical-align: middle;
+    }
+
+    /* ─── PANELS ─────────────────────────────────────────────── */
+    .tab-panel { display: none; padding: 32px var(--pad); max-width: 880px; }
+    .tab-panel.active { display: block; }
+
+    /* ─── TYPOGRAPHY ─────────────────────────────────────────── */
+    .section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--muted);
+      margin-bottom: 18px; padding-bottom: 8px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .lead { font-size: 14px; line-height: 1.7; margin-bottom: 24px; max-width: 600px; color: var(--ink); }
+
+    /* ─── FORM ───────────────────────────────────────────────── */
+    .field { margin-bottom: 18px; }
+    label {
+      display: block; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--muted); margin-bottom: 6px;
+    }
+    input[type="text"], input[type="url"], input[type="datetime-local"],
+    select, textarea {
+      width: 100%; padding: 10px 12px;
+      border: 1px solid var(--rule); border-radius: var(--radius);
+      font-family: var(--sans); font-size: 14px; color: var(--ink);
+      background: #fff; transition: border-color 0.15s;
+      min-height: 44px;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--black); }
+    textarea { resize: vertical; min-height: 80px; }
+    .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 540px) { .field-row { grid-template-columns: 1fr; } }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+
+    /* ─── BUTTONS ────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 11px 20px; min-height: 44px;
+      font-family: var(--sans); font-size: 12px; font-weight: 700;
+      letter-spacing: 0.07em; text-transform: uppercase;
+      border: none; border-radius: var(--radius); cursor: pointer;
+      transition: opacity 0.15s; user-select: none;
+    }
+    .btn:hover { opacity: 0.8; }
+    .btn-primary  { background: var(--black); color: var(--white); }
+    .btn-secondary { background: transparent; color: var(--black); border: 1.5px solid var(--black); }
+    .btn-sm { padding: 8px 14px; min-height: 36px; font-size: 11px; }
+
+    /* ─── OUTPUT BOX ─────────────────────────────────────────── */
+    .output-box {
+      background: var(--mid); border: 1px solid var(--rule);
+      border-radius: var(--radius); padding: 18px; margin-top: 22px;
+    }
+    .output-box pre {
+      font-family: var(--mono); font-size: 11.5px;
+      white-space: pre-wrap; word-break: break-all; color: var(--ink);
+      margin-top: 12px;
+    }
+    .manifest-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* ─── HASH RESULT ────────────────────────────────────────── */
+    .hash-result {
+      display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px;
+      padding: 14px; border: 1px solid var(--rule);
+      border-radius: var(--radius); background: #fff; margin-bottom: 12px;
+    }
+    .hash-label { font-size: 11px; font-weight: 700; text-transform: uppercase;
+                  letter-spacing: 0.06em; color: var(--muted); min-width: 70px; padding-top: 1px; }
+    .hash-value { font-family: var(--mono); font-size: 11px; word-break: break-all; flex: 1; }
+
+    /* ─── DIVIDER ─────────────────────────────────────────────── */
+    .divider { height: 1px; background: var(--rule); margin: 28px 0; }
+
+    /* ─── DISCLOSURE ITEMS ───────────────────────────────────── */
+    .disclosure-item {
+      border: 1px solid var(--rule); border-radius: var(--radius);
+      padding: 14px; margin-bottom: 12px; position: relative; background: #fff;
+    }
+    .remove-btn {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none; cursor: pointer;
+      font-size: 16px; color: var(--muted); line-height: 1; min-height: 0;
+    }
+    .remove-btn:hover { color: var(--danger); }
+
+    /* ─── TOGGLES / PILL SELECTS ─────────────────────────────── */
+    .pill-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+    .pill-btn {
+      padding: 8px 15px; min-height: 36px;
+      border: 1.5px solid var(--rule); border-radius: 20px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      background: #fff; color: var(--muted);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .pill-btn.selected { border-color: var(--black); background: var(--black); color: var(--white); }
+
+    .toggle-group {
+      display: inline-flex; border: 1.5px solid var(--black);
+      border-radius: var(--radius); overflow: hidden;
+      margin-bottom: 22px; flex-wrap: wrap;
+    }
+    .toggle-opt {
+      padding: 9px 15px; min-height: 40px;
+      font-size: 12px; font-weight: 600;
+      border: none; cursor: pointer;
+      background: #fff; color: var(--muted);
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .toggle-opt + .toggle-opt { border-left: 1.5px solid var(--black); }
+    .toggle-opt.active { background: var(--black); color: var(--white); }
+
+    /* ─── PREVIEW PANE ───────────────────────────────────────── */
+    .preview-pane { border: 1px solid var(--rule); border-radius: var(--radius); overflow: hidden; margin-top: 22px; }
+    .preview-header {
+      background: var(--mid); padding: 9px 14px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; color: var(--muted);
+      border-bottom: 1px solid var(--rule);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    #text-preview-area {
+      padding: 18px; font-size: 14px; line-height: 1.7;
+      background: #fff; min-height: 100px; word-break: break-word;
+    }
+    /* GTC superscript always renders in system sans-serif */
+    .gtc-sup {
+      font-family: var(--sans);
+      font-size: 0.65em;
+      vertical-align: super;
+      letter-spacing: 0.04em;
+      margin-left: 2px;
+      opacity: 0.8;
+    }
+    #image-preview-wrapper { padding: 12px; background: #fff; }
+    #compositeCanvas { display: block; max-width: 100%; height: auto; border-radius: 2px; }
+
+    /* ─── CORNER OPTIONS ─────────────────────────────────────── */
+    .corner-opts { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+    .corner-opt {
+      padding: 7px 13px; min-height: 36px;
+      border: 1.5px solid var(--rule); border-radius: var(--radius);
+      font-size: 11px; font-weight: 600; cursor: pointer;
+      background: #fff; color: var(--muted); transition: all 0.15s;
+    }
+    .corner-opt.selected { border-color: var(--black); background: var(--black); color: var(--white); }
+
+    /* ─── MARK SIZE ROW ──────────────────────────────────────── */
+    .size-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .size-row label { margin: 0; white-space: nowrap; }
+    .size-row input[type="range"] { flex: 1; min-width: 80px; }
+    .size-row span { font-size: 12px; min-width: 38px; }
+
+    /* ─── DOWNLOAD ROW ───────────────────────────────────────── */
+    .download-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+
+    /* ─── FILE TYPE INDICATOR ────────────────────────────────── */
+    .filetype-badge {
+      display: inline-block; padding: 3px 9px;
+      background: var(--mid); border: 1px solid var(--rule);
+      border-radius: 3px; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ─── AUDIT TAB ──────────────────────────────────────────── */
+    .audit-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+    .audit-row .field { flex: 1; min-width: 200px; margin: 0; }
+    .audit-result-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 14px; border: 1px solid var(--rule);
+      border-radius: var(--radius); background: #fff; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .audit-result-row .hash-label { min-width: 90px; }
+    .status-chip {
+      display: inline-block; padding: 3px 9px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    }
+    .chip-ok   { background: #d4edda; color: var(--success); }
+    .chip-err  { background: #f8d7da; color: var(--danger); }
+    .chip-info { background: var(--mid); color: var(--muted); }
+
+    /* ─── CHECKBOX LABELS ────────────────────────────────────── */
+    .check-label {
+      display: flex; align-items: center; gap: 10px; cursor: pointer;
+      font-size: 13px; color: var(--ink);
+      text-transform: none; letter-spacing: 0; font-weight: 400; margin: 0;
+      padding: 2px 0;
+    }
+    .check-label input[type="checkbox"] { width: 16px; height: 16px; flex-shrink: 0; cursor: pointer; }
+
+    /* ─── VERIFY (VERIFY TAB) ────────────────────────────────── */
+    .verify-input-row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 22px; }
+    .verify-input-row .field { flex: 1; min-width: 200px; margin: 0; }
+
+    /* ─── BULK AUDIT TABLE ───────────────────────────────────── */
+    .bulk-toolbar {
+      display: flex; gap: 10px; flex-wrap: wrap;
+      align-items: center; margin-bottom: 14px;
+    }
+    .bulk-table-wrap {
+      overflow-x: auto; border: 1px solid var(--rule);
+      border-radius: var(--radius); background: #fff;
+      margin-bottom: 16px;
+    }
+    table.bulk-table {
+      border-collapse: collapse; width: 100%;
+      min-width: 820px; font-size: 12px;
+    }
+    table.bulk-table thead tr {
+      background: var(--mid); border-bottom: 2px solid var(--rule);
+    }
+    table.bulk-table th {
+      padding: 9px 10px; text-align: left;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--muted); white-space: nowrap;
+    }
+    table.bulk-table td {
+      padding: 6px 6px; border-bottom: 1px solid var(--rule);
+      vertical-align: middle;
+    }
+    table.bulk-table tr:last-child td { border-bottom: none; }
+    table.bulk-table tr:hover td { background: #fafaf8; }
+    table.bulk-table input[type="text"] {
+      padding: 5px 7px; font-size: 12px;
+      border: 1px solid transparent; border-radius: 3px;
+      width: 100%; min-width: 80px; min-height: 32px;
+      background: transparent;
+    }
+    table.bulk-table input[type="text"]:focus {
+      border-color: var(--black); background: #fff; outline: none;
+    }
+    table.bulk-table select {
+      padding: 5px 6px; font-size: 12px;
+      border: 1px solid transparent; border-radius: 3px;
+      min-height: 32px; background: transparent; width: 100%;
+    }
+    table.bulk-table select:focus { border-color: var(--black); background: #fff; outline: none; }
+    .row-status {
+      display: inline-block; padding: 3px 8px; border-radius: 3px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.06em;
+      text-transform: uppercase; white-space: nowrap;
+    }
+    .rs-pass    { background: #d4edda; color: var(--success); }
+    .rs-fail    { background: #f8d7da; color: var(--danger); }
+    .rs-warn    { background: #fff3cd; color: #856404; }
+    .rs-pending { background: var(--mid); color: var(--muted); }
+    .del-row-btn {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 15px; padding: 4px 6px;
+      line-height: 1; border-radius: 3px;
+    }
+    .del-row-btn:hover { color: var(--danger); background: #f8d7da; }
+    .bulk-summary {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      padding: 12px 14px; background: var(--mid);
+      border: 1px solid var(--rule); border-radius: var(--radius);
+      margin-bottom: 14px; font-size: 12px;
+    }
+    .bulk-summary span { font-weight: 700; }
+    .col-url    { min-width: 160px; width: 18%; }
+    .col-title  { min-width: 120px; width: 14%; }
+    .col-type   { min-width: 90px;  width: 9%; }
+    .col-hash   { min-width: 130px; width: 18%; font-family: var(--mono); font-size: 11px; }
+    .col-live   { min-width: 130px; width: 18%; font-family: var(--mono); font-size: 11px; }
+    .col-mid    { min-width: 100px; width: 11%; }
+    .col-notes  { min-width: 90px;  width: 9%; }
+    .col-status { min-width: 80px;  width: 7%; }
+    .col-del    { width: 36px; text-align: center; }
+
+    /* ─── FOOTER ─────────────────────────────────────────────── */
+    footer {
+      border-top: 1px solid var(--rule); padding: 14px var(--pad);
+      font-size: 11px; color: var(--muted);
+      display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
+    }
+    footer a { color: var(--muted); text-decoration: underline; }
+  </style>
 </head>
 <body>
-<div class="container">
-  <h1>GTC Tools</h1>
-  <p class="subtitle">Create disclosure manifests, verify content, and audit your site. Everything runs in your browser — no data leaves your machine.</p>
 
-  <div class="tabs">
-    <button class="tab active" onclick="showPanel('create')">Create Manifest</button>
-    <button class="tab" onclick="showPanel('verify')">Verify</button>
-    <button class="tab" onclick="showPanel('audit')">Site Audit</button>
+<!-- HEADER -->
+<header>
+  <svg class="gtc-logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-label="GTC">
+    <rect x="8" y="4" width="84" height="76" rx="18" ry="18" fill="#0a0a0a"/>
+    <polygon points="14,72 14,112 44,80" fill="#0a0a0a"/>
+  </svg>
+  <h1>GTC Tools <span>— Ground Truth Credential</span></h1>
+</header>
+
+<!-- TAB BAR -->
+<nav class="tab-bar" role="tablist">
+  <button class="tab-btn active" role="tab" aria-selected="true"  data-tab="verify">Verify</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" data-tab="manifest">Create Manifest</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" data-tab="social">
+    Social Post <span class="tab-new">NEW</span>
+  </button>
+  <button class="tab-btn"        role="tab" aria-selected="false" data-tab="audit">Site Audit</button>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 1 — VERIFY                                            -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="tab-panel active" id="tab-verify">
+  <div class="section-label">Verify a GTC disclosure</div>
+  <p class="lead">Paste text or upload any file. The tool generates a SHA-256 hash you can compare against the <code>content_hash</code> field in a GTC manifest. Everything runs locally — nothing is sent to a server.</p>
+
+  <div class="field">
+    <label>Paste text content</label>
+    <textarea id="verify-text" rows="5" placeholder="Paste the exact published text here…"></textarea>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin:6px 0 10px;">— or upload a file —</div>
+  <div class="field">
+    <label>File (image, PDF, video, audio, document…)</label>
+    <input type="file" id="verify-file" style="font-size:13px;padding:8px 0;min-height:44px;">
+    <div class="hint">Large files are read in chunks. Hash is computed in-browser; nothing leaves your device.</div>
+  </div>
+  <button class="btn btn-primary" id="verify-hash-btn">Generate SHA-256 Hash</button>
+
+  <div id="verify-result" style="display:none;" class="output-box">
+    <div class="audit-result-row">
+      <span class="hash-label">SHA-256</span>
+      <span class="hash-value" id="verify-hash-out" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;">—</span>
+    </div>
+    <p class="hint" style="margin-top:8px;">Compare against <code>content_hash</code> in the manifest. Exact match = content is unmodified.</p>
   </div>
 
-  <!-- ==================== CREATE ==================== -->
-  <div id="create" class="panel active">
-
-    <div class="section-title">1. Hash your content</div>
-    <div class="drop-zone" id="create-drop" onclick="document.getElementById('create-file-input').click()">
-      Drop your published file here, or click to select.<br>
-      <span style="font-size:.75rem">(HTML, PDF, image, document — any file. Nothing is uploaded. The hash is computed in your browser.)</span>
-      <input type="file" id="create-file-input" style="display:none" onchange="hashCreateFile(this)">
-      <div class="hash-result" id="create-hash-result" style="display:none"></div>
-    </div>
-
-    <div class="section-title">2. Your information</div>
-    <div class="field-row">
-      <div class="field">
-        <label for="c-name">Your name</label>
-        <input type="text" id="c-name" placeholder="Dee Jared Johnson">
-      </div>
-      <div class="field">
-        <label for="c-org">Organization (optional)</label>
-        <input type="text" id="c-org" placeholder="Cognitive Fusion">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="c-url">Your URL</label>
-        <input type="url" id="c-url" placeholder="https://www.example.com">
-      </div>
-      <div class="field">
-        <label for="c-role">Your role</label>
-        <select id="c-role">
-          <option value="Author">Author</option>
-          <option value="Editor">Editor</option>
-          <option value="Publisher">Publisher</option>
-          <option value="Designer">Designer</option>
-          <option value="Developer">Developer</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="section-title">3. Content details</div>
+  <div class="divider"></div>
+  <div class="section-label">Look up a manifest</div>
+  <div class="verify-input-row">
     <div class="field">
-      <label for="c-title">Content title</label>
-      <input type="text" id="c-title" placeholder="My Article Title">
+      <label>Manifest ID or URL</label>
+      <input type="text" id="manifest-lookup" placeholder="gtc-glasswing-014-2026-08-12">
     </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="c-type">Content type</label>
-        <select id="c-type">
-          <option value="article">Article</option>
-          <option value="post">Post</option>
-          <option value="report">Report</option>
-          <option value="image">Image</option>
-          <option value="document">Document</option>
-          <option value="presentation">Presentation</option>
-          <option value="audio">Audio</option>
-          <option value="video">Video</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="c-pub-url">Published URL</label>
-        <input type="url" id="c-pub-url" placeholder="https://www.example.com/my-article">
-      </div>
-    </div>
+    <button class="btn btn-secondary" id="manifest-lookup-btn" style="white-space:nowrap;">Open on GitHub</button>
+  </div>
+  <div class="hint">Manifests live at <a href="https://github.com/djaredj/ground-truth-credential/tree/main/manifests" target="_blank">github.com/djaredj/ground-truth-credential/manifests</a></div>
+</section>
 
-    <div class="section-title">4. AI system used</div>
-    <div class="field-row">
-      <div class="field">
-        <label for="c-provider">Provider</label>
-        <select id="c-provider" onchange="updateSystemOptions()">
-          <option value="Anthropic">Anthropic</option>
-          <option value="OpenAI">OpenAI</option>
-          <option value="Google">Google</option>
-          <option value="Meta">Meta</option>
-          <option value="Midjourney">Midjourney</option>
-          <option value="Stability AI">Stability AI</option>
-          <option value="Adobe">Adobe</option>
-          <option value="Other">Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label for="c-system">System / model</label>
-        <input type="text" id="c-system" placeholder="Claude">
-      </div>
-    </div>
-    <div class="field-row">
-      <div class="field">
-        <label for="c-model">Model version (optional)</label>
-        <input type="text" id="c-model" placeholder="claude-sonnet-4-6">
-      </div>
-      <div class="field">
-        <label for="c-usage-type">How was AI used?</label>
-        <select id="c-usage-type">
-          <option value="drafting">Drafting</option>
-          <option value="editing">Editing</option>
-          <option value="research">Research</option>
-          <option value="analysis">Analysis</option>
-          <option value="translation">Translation</option>
-          <option value="code_generation">Code generation</option>
-          <option value="image_generation">Image generation</option>
-          <option value="transcription">Transcription</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-    </div>
-    <div class="field">
-      <label for="c-usage-desc">Describe the AI's role</label>
-      <textarea id="c-usage-desc" placeholder="Be specific. Example: Claude drafted the analysis from my structural claims and editorial direction. The structural arguments are mine. The prose is Claude's."></textarea>
-    </div>
-
-    <div class="section-title">5. Disclosures — the conflicts that matter</div>
-    <p class="help" style="margin-bottom:.75rem">Each disclosure names a specific structural relationship or conflict. This is the layer that watermarks and Content Credentials don't provide. Be specific — "AI was used" is not a disclosure.</p>
-    <div id="disclosures-list"></div>
-    <button class="btn-secondary" onclick="addDisclosure()" style="font-size:.8125rem">+ Add disclosure</button>
-
-    <div class="section-title">6. Generate</div>
-    <div class="btn-row">
-      <button onclick="generateManifest()">Generate manifest</button>
-      <button class="btn-secondary" onclick="copyManifest()">Copy JSON</button>
-      <button class="btn-secondary" onclick="downloadManifest()">Download .json</button>
-    </div>
-    <div class="output-box" id="create-output" style="display:none"></div>
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 2 — CREATE MANIFEST                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="tab-panel" id="tab-manifest">
+  <div class="section-label">Deployer</div>
+  <div class="field-row">
+    <div class="field"><label>Name</label><input type="text" id="m-deployer-name" placeholder="Dee Jared Johnson"></div>
+    <div class="field"><label>Organization</label><input type="text" id="m-deployer-org" placeholder="Cognitive Fusion"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>URL</label><input type="url" id="m-deployer-url" placeholder="https://www.cognitivefusion.systems"></div>
+    <div class="field"><label>Role</label><input type="text" id="m-deployer-role" placeholder="Author"></div>
   </div>
 
-  <!-- ==================== VERIFY ==================== -->
-  <div id="verify" class="panel">
-
-    <div class="section-title">Option A: Paste a hash</div>
+  <div class="divider"></div>
+  <div class="section-label">Content</div>
+  <div class="field"><label>Title</label><input type="text" id="m-content-title" placeholder="The Glasswing Translator, Issue 014"></div>
+  <div class="field-row">
     <div class="field">
-      <label for="v-hash">Content SHA-256 hash</label>
-      <input type="text" id="v-hash" class="mono-input" placeholder="64-character hex string">
+      <label>Type</label>
+      <select id="m-content-type">
+        <option value="article">Article</option><option value="post">Post</option>
+        <option value="report">Report</option><option value="image">Image</option>
+        <option value="document">Document</option><option value="presentation">Presentation</option>
+        <option value="audio">Audio</option><option value="video">Video</option>
+        <option value="other">Other</option>
+      </select>
     </div>
-    <button onclick="verifyHash()">Verify</button>
+    <div class="field"><label>Published at</label><input type="datetime-local" id="m-content-published"></div>
+  </div>
+  <div class="field"><label>Canonical URL</label><input type="url" id="m-content-url" placeholder="https://www.cognitivefusion.systems/glasswing-014.html"></div>
+  <div class="field">
+    <label>Content body (to auto-hash)</label>
+    <textarea id="m-content-body" rows="4" placeholder="Paste exact published content to generate its SHA-256 hash…"></textarea>
+    <div class="hint">Or enter a hash manually in the field below.</div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>SHA-256 Hash</label><input type="text" id="m-content-hash" placeholder="Auto-generated or paste manually"></div>
+    <div class="field" style="display:flex;align-items:flex-end;"><button class="btn btn-secondary btn-sm" id="hash-content-btn">Hash Content</button></div>
+  </div>
+  <div class="field"><label>Hash scope</label><input type="text" id="m-content-hash-scope" placeholder="Full HTML body excluding nav and footer."></div>
 
-    <div class="section-title">Option B: Drop a file to hash it</div>
-    <div class="drop-zone" id="verify-drop" onclick="document.getElementById('verify-file-input').click()">
-      Drop the published file here. The SHA-256 hash will be computed in your browser and checked automatically.
-      <input type="file" id="verify-file-input" style="display:none" onchange="hashVerifyFile(this)">
-    </div>
-
-    <div class="result" id="verify-result"></div>
-
-    <div class="section-title" style="margin-top:2rem">Load a custom manifest registry</div>
-    <p class="help">By default, this page checks against the Glasswing Translator manifests. To verify against your own manifests, paste your registry JSON below.</p>
+  <div class="divider"></div>
+  <div class="section-label">AI System</div>
+  <div class="field-row">
+    <div class="field"><label>Provider</label><input type="text" id="m-ai-provider" placeholder="Anthropic"></div>
+    <div class="field"><label>System / Model</label><input type="text" id="m-ai-system" placeholder="Claude"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>Model version</label><input type="text" id="m-ai-version" placeholder="claude-sonnet-4-6"></div>
     <div class="field">
-      <textarea id="custom-registry" rows="4" class="mono-input" placeholder='{"content_hash": {"id":"manifest-id","title":"Title","url":"https://...","disclosures":[...]}}'></textarea>
+      <label>Usage type</label>
+      <select id="m-ai-usage-type">
+        <option value="drafting">Drafting</option><option value="editing">Editing</option>
+        <option value="research">Research</option><option value="analysis">Analysis</option>
+        <option value="translation">Translation</option><option value="code_generation">Code generation</option>
+        <option value="image_generation">Image generation</option><option value="transcription">Transcription</option>
+        <option value="other">Other</option>
+      </select>
     </div>
-    <button class="btn-secondary" onclick="loadCustomRegistry()" style="font-size:.8125rem">Load registry</button>
-    <span id="registry-status" style="font-size:.75rem;color:var(--muted);margin-left:.5rem"></span>
+  </div>
+  <div class="field"><label>Usage description</label><textarea id="m-ai-desc" rows="3" placeholder="Claude drafted the prose from DJJ's structural claims and editorial direction…"></textarea></div>
+
+  <div class="divider"></div>
+  <div class="section-label">Disclosures</div>
+  <div id="disclosures-container"></div>
+  <button class="btn btn-secondary btn-sm" id="add-disclosure-btn" style="margin-bottom:22px;">+ Add Disclosure</button>
+
+  <div class="divider"></div>
+  <div class="section-label">Verification</div>
+  <div class="field"><label>Manifest URL (once committed to GitHub)</label><input type="url" id="m-manifest-url" placeholder="https://github.com/djaredj/ground-truth-credential/blob/main/manifests/glasswing-014.json"></div>
+  <div class="field"><label>Notes</label><textarea id="m-notes" rows="2" placeholder="Optional context…"></textarea></div>
+
+  <button class="btn btn-primary" id="generate-manifest-btn">Generate Manifest JSON</button>
+
+  <div id="manifest-output" style="display:none;" class="output-box">
+    <div class="manifest-actions">
+      <button class="btn btn-secondary btn-sm" id="copy-manifest-btn">Copy JSON</button>
+      <button class="btn btn-secondary btn-sm" id="download-manifest-btn">Download .json</button>
+    </div>
+    <pre id="manifest-json-out"></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 3 — SOCIAL POST CREDENTIALER                          -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="tab-panel" id="tab-social">
+  <div class="section-label">Social Post Credentialer</div>
+  <p class="lead">C2PA only applies to images, only on LinkedIn. GTC covers text, images, video, PDFs, carousels, and audio — on any platform. Add the mark, generate the manifest.</p>
+
+  <!-- PLATFORM -->
+  <div class="field">
+    <label>Platform</label>
+    <div class="pill-group" id="platform-select">
+      <button class="pill-btn" data-platform="LinkedIn">LinkedIn</button>
+      <button class="pill-btn" data-platform="X / Twitter">X / Twitter</button>
+      <button class="pill-btn" data-platform="Instagram">Instagram</button>
+      <button class="pill-btn" data-platform="Facebook">Facebook</button>
+      <button class="pill-btn" data-platform="Threads">Threads</button>
+      <button class="pill-btn" data-platform="Bluesky">Bluesky</button>
+      <button class="pill-btn" data-platform="Mastodon">Mastodon</button>
+      <button class="pill-btn" data-platform="YouTube">YouTube</button>
+      <button class="pill-btn" data-platform="TikTok">TikTok</button>
+      <button class="pill-btn" data-platform="Other">Other</button>
+    </div>
   </div>
 
-  <!-- ==================== AUDIT ==================== -->
-  <div id="audit" class="panel">
-    <p class="help" style="margin-bottom:1rem">Inventory every piece of AI-assisted content on your site. Identify conflicts, prioritize which items need manifests first, and export the results.</p>
+  <!-- CONTENT TYPE -->
+  <div class="field">
+    <label>Content type</label>
+    <div class="toggle-group" id="content-type-toggle">
+      <button class="toggle-opt active" data-type="text">Text only</button>
+      <button class="toggle-opt" data-type="image">Image</button>
+      <button class="toggle-opt" data-type="both">Text + Image</button>
+      <button class="toggle-opt" data-type="video">Video</button>
+      <button class="toggle-opt" data-type="pdf">PDF / Carousel</button>
+      <button class="toggle-opt" data-type="audio">Audio</button>
+      <button class="toggle-opt" data-type="doc">Document</button>
+    </div>
+  </div>
 
-    <table class="audit-table" id="audit-table">
+  <!-- ── TEXT SECTION ── -->
+  <div id="text-section">
+    <div class="section-label" style="margin-top:4px;">Post text</div>
+    <div class="field">
+      <label>Post content</label>
+      <textarea id="sp-text" rows="6" placeholder="Write or paste your post text here…"></textarea>
+      <div class="hint">The GTC mark appends as a styled superscript at the end of the text.</div>
+    </div>
+    <div class="field" style="margin-bottom:6px;">
+      <label class="check-label">
+        <input type="checkbox" id="append-mark-text" checked>
+        Append GTC mark to end of text
+      </label>
+    </div>
+  </div>
+
+  <!-- ── IMAGE SECTION ── -->
+  <div id="image-section" style="display:none;">
+    <div class="section-label" style="margin-top:4px;">Image</div>
+    <div class="field">
+      <label>Upload image</label>
+      <input type="file" id="sp-image" accept="image/*" style="font-size:13px;padding:8px 0;min-height:44px;">
+    </div>
+    <div class="field">
+      <label>Mark corner</label>
+      <div class="corner-opts">
+        <button class="corner-opt selected" data-corner="top-left">Top left</button>
+        <button class="corner-opt" data-corner="top-right">Top right</button>
+        <button class="corner-opt" data-corner="bottom-left">Bottom left</button>
+        <button class="corner-opt" data-corner="bottom-right">Bottom right</button>
+      </div>
+      <div class="hint">Default: top-left (spec §4.1). Move if a C2PA badge already occupies that corner.</div>
+    </div>
+    <div class="field">
+      <label>Mark color</label>
+      <div class="toggle-group" id="mark-color-toggle">
+        <button class="toggle-opt active" data-color="auto">Auto (contrast)</button>
+        <button class="toggle-opt" data-color="black">Black</button>
+        <button class="toggle-opt" data-color="white">White</button>
+      </div>
+    </div>
+    <div class="size-row field">
+      <label>Mark size</label>
+      <input type="range" id="mark-size-range" min="24" max="120" value="48">
+      <span id="mark-size-label">48px</span>
+    </div>
+  </div>
+
+  <!-- ── VIDEO SECTION ── -->
+  <div id="video-section" style="display:none;">
+    <div class="section-label" style="margin-top:4px;">Video</div>
+    <div class="field">
+      <label>Upload video</label>
+      <input type="file" id="sp-video" accept="video/*" style="font-size:13px;padding:8px 0;min-height:44px;">
+      <div class="hint">Supported: MP4, MOV, WebM, AVI. The tool generates a SHA-256 hash of the file and shows a first-frame thumbnail preview. The GTC mark is burned onto a downloadable cover-frame PNG — or add the mark to the thumbnail/cover image you upload to the platform.</div>
+    </div>
+    <div id="video-thumb-wrap" style="display:none;margin-top:10px;">
+      <div class="filetype-badge">Video — Cover Frame</div>
+      <canvas id="videoThumbCanvas" style="display:block;max-width:100%;border-radius:2px;"></canvas>
+      <div class="field" style="margin-top:10px;">
+        <label>Mark corner on cover frame</label>
+        <div class="corner-opts" id="video-corners">
+          <button class="corner-opt selected" data-vcorner="top-left">Top left</button>
+          <button class="corner-opt" data-vcorner="top-right">Top right</button>
+          <button class="corner-opt" data-vcorner="bottom-left">Bottom left</button>
+          <button class="corner-opt" data-vcorner="bottom-right">Bottom right</button>
+        </div>
+      </div>
+      <div class="size-row field">
+        <label>Mark size</label>
+        <input type="range" id="video-mark-size" min="24" max="120" value="48">
+        <span id="video-mark-size-label">48px</span>
+      </div>
+      <div class="download-row" style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" id="download-video-cover-btn">Download Credentialed Cover Frame</button>
+      </div>
+    </div>
+    <div id="video-hash-display" style="display:none;margin-top:12px;" class="output-box">
+      <div class="audit-result-row">
+        <span class="hash-label">File SHA-256</span>
+        <span id="video-hash-val" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+      </div>
+      <p class="hint">Include this hash in the manifest's <code>content_hash</code> field.</p>
+    </div>
+  </div>
+
+  <!-- ── PDF / CAROUSEL SECTION ── -->
+  <div id="pdf-section" style="display:none;">
+    <div class="section-label" style="margin-top:4px;">PDF / Carousel</div>
+    <div class="field">
+      <label>Upload PDF or carousel file</label>
+      <input type="file" id="sp-pdf" accept=".pdf,.pptx,.key,.odp,application/pdf" style="font-size:13px;padding:8px 0;min-height:44px;">
+      <div class="hint">Accepted: PDF, PPTX, KEY, ODP. The tool hashes the file. For cover-page credentialing, also upload a cover image below to composite the GTC mark onto it.</div>
+    </div>
+    <div class="field">
+      <label>Cover image (optional — to add GTC mark)</label>
+      <input type="file" id="sp-pdf-cover" accept="image/*" style="font-size:13px;padding:8px 0;min-height:44px;">
+    </div>
+    <div id="pdf-cover-wrap" style="display:none;margin-top:10px;">
+      <div class="filetype-badge">PDF / Carousel — Cover</div>
+      <canvas id="pdfCoverCanvas" style="display:block;max-width:100%;border-radius:2px;"></canvas>
+      <div class="download-row" style="margin-top:10px;">
+        <button class="btn btn-primary btn-sm" id="download-pdf-cover-btn">Download Credentialed Cover</button>
+      </div>
+    </div>
+    <div id="pdf-hash-display" style="display:none;margin-top:12px;" class="output-box">
+      <div class="audit-result-row">
+        <span class="hash-label">File SHA-256</span>
+        <span id="pdf-hash-val" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── AUDIO SECTION ── -->
+  <div id="audio-section" style="display:none;">
+    <div class="section-label" style="margin-top:4px;">Audio</div>
+    <div class="field">
+      <label>Upload audio file</label>
+      <input type="file" id="sp-audio" accept="audio/*" style="font-size:13px;padding:8px 0;min-height:44px;">
+      <div class="hint">Accepted: MP3, WAV, FLAC, AAC, OGG. File is hashed locally. The manifest <code>content_hash</code> is the audio file's SHA-256.</div>
+    </div>
+    <div id="audio-hash-display" style="display:none;margin-top:10px;" class="output-box">
+      <div class="audit-result-row">
+        <span class="hash-label">File SHA-256</span>
+        <span id="audio-hash-val" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+      </div>
+    </div>
+    <div class="field" style="margin-top:12px;">
+      <label>Transcript / show notes (optional — for text mark)</label>
+      <textarea id="sp-audio-text" rows="4" placeholder="Paste transcript or show notes here to also append the GTC mark to the text…"></textarea>
+    </div>
+  </div>
+
+  <!-- ── DOCUMENT SECTION ── -->
+  <div id="doc-section" style="display:none;">
+    <div class="section-label" style="margin-top:4px;">Document</div>
+    <div class="field">
+      <label>Upload document</label>
+      <input type="file" id="sp-doc" accept=".docx,.doc,.odt,.rtf,.md,.txt,text/plain,application/msword" style="font-size:13px;padding:8px 0;min-height:44px;">
+      <div class="hint">Accepted: DOCX, ODT, RTF, TXT, MD. File is hashed locally for manifest binding.</div>
+    </div>
+    <div id="doc-hash-display" style="display:none;margin-top:10px;" class="output-box">
+      <div class="audit-result-row">
+        <span class="hash-label">File SHA-256</span>
+        <span id="doc-hash-val" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- PREVIEW PANE (image/video cover composite) -->
+  <div class="preview-pane" id="preview-pane">
+    <div class="preview-header">
+      <span id="preview-platform-label">Preview</span>
+      <button class="btn btn-secondary btn-sm" id="refresh-preview-btn">Refresh</button>
+    </div>
+    <div id="text-preview-area">
+      <em style="color:var(--muted);font-size:13px;">Post text preview will appear here…</em>
+    </div>
+    <div id="image-preview-wrapper" style="display:none;">
+      <canvas id="compositeCanvas"></canvas>
+    </div>
+  </div>
+
+  <div class="download-row" id="download-row" style="display:none;">
+    <button class="btn btn-primary" id="download-image-btn" style="display:none;">Download Credentialed Image</button>
+    <button class="btn btn-secondary" id="copy-text-btn" style="display:none;">Copy Credentialed Text</button>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- MANIFEST FOR THIS POST -->
+  <div class="section-label">Manifest for this post</div>
+  <p class="hint" style="margin-bottom:18px;">Fill these fields and generate a GTC manifest for this specific post or file.</p>
+
+  <div class="field-row">
+    <div class="field"><label>Deployer name</label><input type="text" id="sp-deployer" placeholder="Dee Jared Johnson"></div>
+    <div class="field"><label>Organization</label><input type="text" id="sp-org" placeholder="Cognitive Fusion"></div>
+  </div>
+  <div class="field-row">
+    <div class="field"><label>AI provider</label><input type="text" id="sp-ai-provider" placeholder="Anthropic"></div>
+    <div class="field"><label>AI model</label><input type="text" id="sp-ai-model" placeholder="claude-sonnet-4-6"></div>
+  </div>
+  <div class="field"><label>AI usage description</label><textarea id="sp-ai-desc" rows="2" placeholder="Claude drafted this post from DJJ's editorial direction…"></textarea></div>
+
+  <div class="field">
+    <label>Structural conflicts (check all that apply)</label>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">
+      <label class="check-label"><input type="checkbox" id="dc-overlap"> Provider/subject overlap — the AI provider is also the subject of this post</label>
+      <label class="check-label"><input type="checkbox" id="dc-editorial"> Editorial dependency — I depend on the AI provider's tool to produce content about them</label>
+      <label class="check-label"><input type="checkbox" id="dc-financial"> Financial relationship — I have a financial relationship with the AI provider</label>
+      <label class="check-label"><input type="checkbox" id="dc-recursive" checked> Recursive disclosure — this post was produced using the AI system it describes</label>
+    </div>
+  </div>
+
+  <div class="field"><label>Additional disclosure notes</label><textarea id="sp-extra-disclosure" rows="2" placeholder="Any additional structural conflicts…"></textarea></div>
+
+  <button class="btn btn-primary" id="generate-social-manifest-btn">Generate Post Manifest</button>
+
+  <div id="social-manifest-output" style="display:none;" class="output-box">
+    <div class="manifest-actions">
+      <button class="btn btn-secondary btn-sm" id="copy-social-manifest-btn">Copy JSON</button>
+      <button class="btn btn-secondary btn-sm" id="download-social-manifest-btn">Download .json</button>
+    </div>
+    <pre id="social-manifest-json-out"></pre>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 4 — SITE AUDIT                                        -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="tab-panel" id="tab-audit">
+  <div class="section-label">GTC Site Audit</div>
+  <p class="lead">Audit any published content against its GTC manifest. Paste the live content (or upload the file), paste the manifest JSON, and the tool checks the hash, flags disclosure gaps, and gives you a pass/fail summary.</p>
+
+  <!-- STEP 1 — CONTENT -->
+  <div class="section-label">Step 1 — Content to audit</div>
+  <div class="field">
+    <label>Paste published text</label>
+    <textarea id="audit-text" rows="5" placeholder="Paste the exact live/published text…"></textarea>
+  </div>
+  <div style="text-align:center;color:var(--muted);font-size:12px;margin:6px 0 10px;">— or upload a file —</div>
+  <div class="field">
+    <label>Upload file</label>
+    <input type="file" id="audit-file" style="font-size:13px;padding:8px 0;min-height:44px;">
+    <div class="hint">Hashed locally. Any file type.</div>
+  </div>
+
+  <div class="divider" style="margin:20px 0;"></div>
+
+  <!-- STEP 2 — MANIFEST -->
+  <div class="section-label">Step 2 — Paste the GTC manifest JSON</div>
+  <div class="field">
+    <textarea id="audit-manifest" rows="10" placeholder='Paste the full manifest JSON here, e.g.:&#10;{&#10;  "schema_version": "0.1",&#10;  "content_hash": "e3b0c44…",&#10;  "disclosures": [...]&#10;}'></textarea>
+  </div>
+
+  <button class="btn btn-primary" id="run-audit-btn">Run Audit</button>
+
+  <div id="audit-results" style="display:none;margin-top:24px;">
+    <div class="section-label">Audit Results</div>
+
+    <div class="audit-result-row">
+      <span class="hash-label">Content hash</span>
+      <span id="audit-computed-hash" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+    </div>
+    <div class="audit-result-row">
+      <span class="hash-label">Manifest hash</span>
+      <span id="audit-manifest-hash" style="font-family:var(--mono);font-size:11px;word-break:break-all;flex:1;"></span>
+    </div>
+    <div class="audit-result-row" style="align-items:center;">
+      <span class="hash-label">Hash match</span>
+      <span id="audit-hash-match" class="status-chip chip-info">Pending</span>
+    </div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+    <div class="section-label">Disclosure Check</div>
+
+    <div id="audit-disclosure-list"></div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+    <div class="section-label">Schema Check</div>
+    <div id="audit-schema-list"></div>
+
+    <div class="divider" style="margin:16px 0;"></div>
+    <div class="audit-result-row" style="align-items:center;background:var(--mid);">
+      <span class="hash-label" style="font-size:12px;">Overall</span>
+      <span id="audit-overall" class="status-chip chip-info" style="font-size:12px;">—</span>
+    </div>
+
+    <div style="margin-top:14px;">
+      <button class="btn btn-secondary btn-sm" id="download-audit-report-btn">Download Audit Report (.json)</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!-- BULK AUDIT SPREADSHEET                                    -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="divider" style="margin:36px 0 28px;"></div>
+  <div class="section-label">Bulk Site Audit — Spreadsheet</div>
+  <p class="lead" style="margin-bottom:18px;">
+    Audit your entire GTC-credentialed content catalogue in one table. Import a CSV or add rows manually. Paste the live SHA-256 hash for each item (computed above or externally), and the tool compares against the manifest hash, validates disclosure presence, and exports a full audit report.
+  </p>
+
+  <!-- CORS note -->
+  <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:var(--radius);padding:10px 14px;margin-bottom:18px;font-size:12px;color:#6b5900;line-height:1.6;">
+    <strong>Browser limitation:</strong> this tool cannot fetch live URLs automatically (cross-origin restriction). For each row, paste the live SHA-256 hash you computed in the Verify tab above, or leave it blank to flag the row for manual follow-up.
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="bulk-toolbar">
+    <button class="btn btn-secondary btn-sm" id="bulk-add-row-btn">+ Add Row</button>
+    <label class="btn btn-secondary btn-sm" style="cursor:pointer;margin:0;">
+      Import CSV
+      <input type="file" id="bulk-csv-import" accept=".csv,text/csv" style="display:none;">
+    </label>
+    <button class="btn btn-secondary btn-sm" id="bulk-clear-btn">Clear All</button>
+    <div style="flex:1;"></div>
+    <button class="btn btn-secondary btn-sm" id="bulk-export-csv-btn">Export CSV</button>
+    <button class="btn btn-secondary btn-sm" id="bulk-export-json-btn">Export JSON</button>
+    <button class="btn btn-primary btn-sm" id="bulk-run-btn">Run Bulk Audit</button>
+  </div>
+
+  <!-- SUMMARY BAR (hidden until audit run) -->
+  <div class="bulk-summary" id="bulk-summary" style="display:none;">
+    <div>Total: <span id="bs-total">0</span></div>
+    <div style="color:var(--success);">Pass: <span id="bs-pass">0</span></div>
+    <div style="color:var(--danger);">Fail: <span id="bs-fail">0</span></div>
+    <div style="color:#856404;">Warning: <span id="bs-warn">0</span></div>
+    <div style="color:var(--muted);">Pending: <span id="bs-pending">0</span></div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="bulk-table-wrap">
+    <table class="bulk-table" id="bulk-table">
       <thead>
         <tr>
-          <th style="width:20%">Title / ID</th>
-          <th style="width:15%">URL</th>
-          <th style="width:10%">AI?</th>
-          <th style="width:12%">System</th>
-          <th style="width:10%">Subject overlap?</th>
-          <th style="width:10%">Financial?</th>
-          <th style="width:10%">Priority</th>
-          <th style="width:8%">Manifest?</th>
-          <th style="width:5%"></th>
+          <th class="col-url">Content URL</th>
+          <th class="col-title">Title</th>
+          <th class="col-type">Type</th>
+          <th class="col-hash">Expected Hash (manifest)</th>
+          <th class="col-live">Live Hash (verified)</th>
+          <th class="col-mid">Manifest ID / URL</th>
+          <th class="col-mid">Platform</th>
+          <th class="col-notes">Notes</th>
+          <th class="col-status">Status</th>
+          <th class="col-del"></th>
         </tr>
       </thead>
-      <tbody id="audit-body"></tbody>
+      <tbody id="bulk-tbody"></tbody>
     </table>
-
-    <div class="btn-row">
-      <button class="btn-secondary" onclick="addAuditRow()" style="font-size:.8125rem">+ Add row</button>
-      <button class="btn-secondary" onclick="autoClassify()" style="font-size:.8125rem">Auto-classify priorities</button>
-    </div>
-
-    <div class="audit-summary" id="audit-summary" style="display:none">
-      <h3>Audit Summary</h3>
-      <div class="audit-stat"><span>Total items</span><span class="val" id="a-total">0</span></div>
-      <div class="audit-stat"><span>AI-involved</span><span class="val" id="a-ai">0</span></div>
-      <div class="audit-stat"><span>Subject overlap</span><span class="val" id="a-overlap">0</span></div>
-      <div class="audit-stat"><span>Financial relationship</span><span class="val" id="a-financial">0</span></div>
-      <div class="audit-stat"><span>High priority (need manifests)</span><span class="val priority-high" id="a-high">0</span></div>
-      <div class="audit-stat"><span>Medium priority</span><span class="val priority-medium" id="a-med">0</span></div>
-      <div class="audit-stat"><span>Already have manifests</span><span class="val" id="a-has">0</span></div>
-    </div>
-
-    <div class="btn-row" style="margin-top:1rem">
-      <button onclick="updateAuditSummary()">Update summary</button>
-      <button class="btn-secondary" onclick="exportAuditCSV()">Export CSV</button>
-    </div>
   </div>
 
-  <footer>
-    <a href="https://github.com/djaredj/Ground-Truth-Credential">Ground Truth Credential</a> · Dee Jared Johnson · CC BY 4.0<br>
-    All processing happens in your browser. No data is transmitted.
-  </footer>
-</div>
+  <!-- CSV FORMAT HINT -->
+  <div class="hint" style="margin-bottom:18px;">
+    CSV column order: <code>url, title, type, expected_hash, live_hash, manifest_id, platform, notes</code>.
+    First row may be a header (auto-detected). All columns except <em>url</em> are optional.
+    <button class="btn btn-secondary btn-sm" id="bulk-download-template-btn" style="margin-left:10px;">Download CSV Template</button>
+  </div>
+</section>
 
+<!-- FOOTER -->
+<footer>
+  <span>Ground Truth Credential v0.1 — <a href="https://github.com/djaredj/ground-truth-credential" target="_blank">GitHub</a></span>
+  <span>CC BY 4.0 — Dee Jared Johnson / Cognitive Fusion</span>
+</footer>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- SCRIPT                                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
 <script>
-// ============ TABS ============
-function showPanel(id) {
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
-}
+'use strict';
 
-// ============ HASHING ============
-async function hashFile(file) {
-  const buffer = await file.arrayBuffer();
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-// Drag-and-drop for both zones
-['create-drop','verify-drop'].forEach(id => {
-  const zone = document.getElementById(id);
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
-  zone.addEventListener('drop', async e => {
-    e.preventDefault(); zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (!file) return;
-    const hash = await hashFile(file);
-    if (id === 'create-drop') {
-      const el = document.getElementById('create-hash-result');
-      el.style.display = 'block';
-      el.textContent = hash;
-      window._createHash = hash;
-      window._createFileName = file.name;
-    } else {
-      document.getElementById('v-hash').value = hash;
-      verifyHash();
-    }
+/* ─── TAB ROUTING ─────────────────────────────────────────── */
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active'); btn.setAttribute('aria-selected','true');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
   });
 });
 
-async function hashCreateFile(input) {
-  const file = input.files[0]; if (!file) return;
-  const hash = await hashFile(file);
-  const el = document.getElementById('create-hash-result');
-  el.style.display = 'block';
-  el.textContent = hash;
-  window._createHash = hash;
-  window._createFileName = file.name;
+/* ─── SHA-256 ─────────────────────────────────────────────── */
+async function sha256(data) {
+  const buf = (typeof data === 'string') ? new TextEncoder().encode(data) : data;
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,'0')).join('');
 }
-async function hashVerifyFile(input) {
-  const file = input.files[0]; if (!file) return;
-  const hash = await hashFile(file);
-  document.getElementById('v-hash').value = hash;
-  verifyHash();
+async function hashFile(file) {
+  const CHUNK = 4 * 1024 * 1024;
+  if (file.size <= CHUNK) return sha256(await file.arrayBuffer());
+  // Stream large files in chunks via incremental hashing workaround
+  // (SubtleCrypto doesn't support streaming, so we concat)
+  const ab = await file.arrayBuffer();
+  return sha256(ab);
 }
 
-// ============ DISCLOSURES ============
-let disclosureCount = 0;
-function addDisclosure() {
+/* ─── GTC MARK DRAW ───────────────────────────────────────── */
+function drawGTCMark(ctx, x, y, size, color) {
+  ctx.fillStyle = color;
+  const w = size, h = size * 0.75, r = size * 0.18;
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.lineTo(x+w-r, y);
+  ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+  ctx.lineTo(x+w, y+h-r);
+  ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+  ctx.lineTo(x+r*2.8, y+h);
+  ctx.quadraticCurveTo(x+r*0.6, y+h, x+r*0.2, y+h+r*0.4);
+  ctx.lineTo(x-size*0.06, y+size*1.04);
+  ctx.lineTo(x+size*0.38, y+h-r*0.1);
+  ctx.lineTo(x+r, y+h);
+  ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+  ctx.lineTo(x, y+r);
+  ctx.quadraticCurveTo(x, y, x+r, y);
+  ctx.closePath(); ctx.fill();
+}
+
+function cornerLum(ctx, corner, W, H, s) {
+  s = Math.min(s, 80);
+  let sx=0, sy=0;
+  if (corner==='top-right')    { sx=W-s; sy=0; }
+  if (corner==='bottom-left')  { sx=0;   sy=H-s; }
+  if (corner==='bottom-right') { sx=W-s; sy=H-s; }
+  const d = ctx.getImageData(sx, sy, s, s).data;
+  let t=0, n=0;
+  for (let i=0; i<d.length; i+=4) {
+    const [r,g,b] = [d[i]/255, d[i+1]/255, d[i+2]/255].map(c => c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4));
+    t += 0.2126*r + 0.7152*g + 0.0722*b; n++;
+  }
+  return t/n;
+}
+
+function compositeOnCanvas(canvas, img, corner, markSize, markColor) {
+  const MAX_W = Math.min(560, window.innerWidth - 64);
+  const sc = Math.min(1, MAX_W / img.width);
+  canvas.width  = Math.round(img.width  * sc);
+  canvas.height = Math.round(img.height * sc);
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  const ms = parseInt(markSize), pad = Math.round(ms*0.5);
+  let mx=pad, my=pad;
+  if (corner==='top-right')    { mx=canvas.width-ms-pad; my=pad; }
+  if (corner==='bottom-left')  { mx=pad; my=canvas.height-ms*1.1-pad; }
+  if (corner==='bottom-right') { mx=canvas.width-ms-pad; my=canvas.height-ms*1.1-pad; }
+  let color='#000000';
+  if (markColor==='white') color='#ffffff';
+  else if (markColor==='auto') color = cornerLum(ctx, corner, canvas.width, canvas.height, ms*2)>0.35?'#000000':'#ffffff';
+  drawGTCMark(ctx, mx, my, ms, color);
+}
+
+/* ─── VERIFY TAB ──────────────────────────────────────────── */
+document.getElementById('verify-hash-btn').addEventListener('click', async () => {
+  const text = document.getElementById('verify-text').value;
+  const file = document.getElementById('verify-file').files[0];
+  let hash='';
+  if (file)          hash = await hashFile(file);
+  else if (text.trim()) hash = await sha256(text);
+  else { alert('Paste text or upload a file first.'); return; }
+  document.getElementById('verify-hash-out').textContent = hash;
+  document.getElementById('verify-result').style.display = 'block';
+});
+document.getElementById('manifest-lookup-btn').addEventListener('click', () => {
+  const v = document.getElementById('manifest-lookup').value.trim();
+  if (!v) return;
+  window.open(v.startsWith('http') ? v : `https://github.com/djaredj/ground-truth-credential/blob/main/manifests/${v}.json`, '_blank');
+});
+
+/* ─── CREATE MANIFEST TAB ─────────────────────────────────── */
+document.getElementById('hash-content-btn').addEventListener('click', async () => {
+  const b = document.getElementById('m-content-body').value;
+  if (!b.trim()) { alert('Paste content first.'); return; }
+  document.getElementById('m-content-hash').value = await sha256(b);
+});
+
+let disclosureCount=0;
+function addDisclosure(type='provider_subject_overlap', statement='', severity='structural', mitigation='') {
   disclosureCount++;
-  const id = disclosureCount;
-  const html = `<div class="disclosure-entry" id="disc-${id}">
-    <button class="remove-disclosure" onclick="document.getElementById('disc-${id}').remove()">remove</button>
-    <div class="field-row">
-      <div class="field">
-        <label>Conflict type</label>
-        <select id="disc-type-${id}">
-          <option value="provider_subject_overlap">Provider is the subject</option>
-          <option value="financial_relationship">Financial relationship</option>
-          <option value="editorial_dependency">Editorial dependency on provider</option>
-          <option value="data_access_asymmetry">Data access asymmetry</option>
-          <option value="recursive_disclosure">Recursive (content is about disclosure)</option>
-          <option value="regulatory_position">Provider holds regulatory position</option>
-          <option value="competitive_interest">Competitive interest</option>
-          <option value="other">Other</option>
-        </select>
-      </div>
-      <div class="field">
-        <label>Severity</label>
-        <select id="disc-sev-${id}">
-          <option value="structural">Structural (inherent, cannot be eliminated)</option>
-          <option value="material">Material (could influence conclusions)</option>
-          <option value="contextual">Contextual (unlikely to influence)</option>
-        </select>
-      </div>
+  const id=`disc-${disclosureCount}`;
+  const el=document.createElement('div');
+  el.className='disclosure-item'; el.id=id;
+  el.innerHTML=`<button class="remove-btn" title="Remove">✕</button>
+    <div class="field-row" style="margin-bottom:10px;">
+      <div class="field"><label>Type</label><select class="disc-type">
+        <option value="provider_subject_overlap" ${type==='provider_subject_overlap'?'selected':''}>Provider/subject overlap</option>
+        <option value="financial_relationship" ${type==='financial_relationship'?'selected':''}>Financial relationship</option>
+        <option value="editorial_dependency" ${type==='editorial_dependency'?'selected':''}>Editorial dependency</option>
+        <option value="data_access_asymmetry" ${type==='data_access_asymmetry'?'selected':''}>Data access asymmetry</option>
+        <option value="recursive_disclosure" ${type==='recursive_disclosure'?'selected':''}>Recursive disclosure</option>
+        <option value="regulatory_position" ${type==='regulatory_position'?'selected':''}>Regulatory position</option>
+        <option value="competitive_interest" ${type==='competitive_interest'?'selected':''}>Competitive interest</option>
+        <option value="other" ${type==='other'?'selected':''}>Other</option>
+      </select></div>
+      <div class="field"><label>Severity</label><select class="disc-severity">
+        <option value="structural" ${severity==='structural'?'selected':''}>Structural</option>
+        <option value="material" ${severity==='material'?'selected':''}>Material</option>
+        <option value="contextual" ${severity==='contextual'?'selected':''}>Contextual</option>
+      </select></div>
     </div>
-    <div class="field">
-      <label>Statement</label>
-      <textarea id="disc-stmt-${id}" rows="2" placeholder="Plain language. Name the entities. Be specific about the conflict."></textarea>
-    </div>
-    <div class="field">
-      <label>Mitigation</label>
-      <input type="text" id="disc-mit-${id}" placeholder="What you did about it. 'None — the conflict is structural' is valid.">
-    </div>
-  </div>`;
-  document.getElementById('disclosures-list').insertAdjacentHTML('beforeend', html);
+    <div class="field"><label>Statement</label><textarea class="disc-statement" rows="2" placeholder="Plain-language declaration…">${statement}</textarea></div>
+    <div class="field" style="margin-bottom:0;"><label>Mitigation</label><textarea class="disc-mitigation" rows="2" placeholder="What was done to address this…">${mitigation}</textarea></div>`;
+  document.getElementById('disclosures-container').appendChild(el);
+  el.querySelector('.remove-btn').addEventListener('click', () => el.remove());
 }
+document.getElementById('add-disclosure-btn').addEventListener('click', () => addDisclosure());
+addDisclosure(); // seed one
 
-// Start with one disclosure
-addDisclosure();
-
-function getDisclosures() {
-  const entries = document.querySelectorAll('.disclosure-entry');
-  return Array.from(entries).map(el => {
-    const id = el.id.replace('disc-','');
-    return {
-      type: document.getElementById(`disc-type-${id}`).value,
-      statement: document.getElementById(`disc-stmt-${id}`).value,
-      severity: document.getElementById(`disc-sev-${id}`).value,
-      mitigation: document.getElementById(`disc-mit-${id}`).value
-    };
-  }).filter(d => d.statement.trim());
-}
-
-// ============ GENERATE MANIFEST ============
-function generateManifest() {
-  const title = document.getElementById('c-title').value || 'Untitled';
-  const now = new Date().toISOString();
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+$/,'').substring(0,40);
-  const dateStr = now.substring(0,10);
-
-  const manifest = {
-    schema_version: "0.1",
-    manifest_id: `gtc-${slug}-${dateStr}`,
-    created_at: now,
-    deployer: {
-      name: document.getElementById('c-name').value,
-      organization: document.getElementById('c-org').value || undefined,
-      url: document.getElementById('c-url').value || undefined,
-      role: document.getElementById('c-role').value
-    },
-    content: {
-      title: title,
-      type: document.getElementById('c-type').value,
-      url: document.getElementById('c-pub-url').value || undefined,
-      published_at: now,
-      content_hash: window._createHash || "[hash your file first]",
-      hash_method: "SHA-256",
-      hash_scope: window._createFileName
-        ? `Full file bytes of ${window._createFileName}`
-        : "Full file bytes of the published content."
-    },
-    ai_system: {
-      provider: document.getElementById('c-provider').value,
-      system: document.getElementById('c-system').value,
-      model_version: document.getElementById('c-model').value || undefined,
-      usage_type: document.getElementById('c-usage-type').value,
-      usage_description: document.getElementById('c-usage-desc').value
-    },
-    disclosures: getDisclosures(),
-    prior_manifests: [],
-    verification: {
-      manifest_url: "",
-      verification_page: "",
-      git_commit: ""
-    }
+document.getElementById('generate-manifest-btn').addEventListener('click', async () => {
+  const now=new Date().toISOString();
+  const title=document.getElementById('m-content-title').value||'Untitled';
+  const safeId=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/-+$/,'').substring(0,40);
+  const dateStr=now.substring(0,10);
+  const disclosures=[];
+  document.querySelectorAll('.disclosure-item').forEach(item => {
+    disclosures.push({
+      type: item.querySelector('.disc-type').value,
+      statement: item.querySelector('.disc-statement').value,
+      severity: item.querySelector('.disc-severity').value,
+      mitigation: item.querySelector('.disc-mitigation').value
+    });
+  });
+  let hash=document.getElementById('m-content-hash').value;
+  if (!hash) { const b=document.getElementById('m-content-body').value; if(b) hash=await sha256(b); }
+  const manifest={
+    schema_version:'0.1',
+    manifest_id:`gtc-${safeId}-${dateStr}`,
+    created_at:now,
+    deployer:{name:document.getElementById('m-deployer-name').value,organization:document.getElementById('m-deployer-org').value,url:document.getElementById('m-deployer-url').value,role:document.getElementById('m-deployer-role').value},
+    content:{title,type:document.getElementById('m-content-type').value,url:document.getElementById('m-content-url').value,published_at:document.getElementById('m-content-published').value?new Date(document.getElementById('m-content-published').value).toISOString():now,content_hash:hash||'(paste content and click Hash Content)',hash_method:'SHA-256',hash_scope:document.getElementById('m-content-hash-scope').value},
+    ai_system:{provider:document.getElementById('m-ai-provider').value,system:document.getElementById('m-ai-system').value,model_version:document.getElementById('m-ai-version').value,usage_type:document.getElementById('m-ai-usage-type').value,usage_description:document.getElementById('m-ai-desc').value},
+    disclosures,
+    verification:{manifest_url:document.getElementById('m-manifest-url').value,verification_page:'https://djaredj.github.io/ground-truth-credential/tools/',git_commit:''},
+    notes:document.getElementById('m-notes').value
   };
+  const json=JSON.stringify(manifest,null,2);
+  document.getElementById('manifest-json-out').textContent=json;
+  document.getElementById('manifest-output').style.display='block';
+  document.getElementById('manifest-output').scrollIntoView({behavior:'smooth'});
+  document.getElementById('copy-manifest-btn').onclick=()=>navigator.clipboard.writeText(json);
+  document.getElementById('download-manifest-btn').onclick=()=>dlJson(json,`${manifest.manifest_id}.json`);
+});
 
-  // Clean undefined fields
-  const clean = JSON.parse(JSON.stringify(manifest, (k,v) => v === undefined || v === '' ? undefined : v));
-
-  window._generatedManifest = JSON.stringify(clean, null, 2);
-  const output = document.getElementById('create-output');
-  output.style.display = 'block';
-  output.textContent = window._generatedManifest;
+function dlJson(json, filename) {
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([json],{type:'application/json'}));
+  a.download=filename; a.click();
 }
 
-function copyManifest() {
-  if (!window._generatedManifest) { generateManifest(); }
-  navigator.clipboard.writeText(window._generatedManifest);
+/* ─── SOCIAL TAB ──────────────────────────────────────────── */
+let selectedPlatform='', contentType='text', markColor='auto', markCorner='top-left';
+let uploadedImage=null;
+
+// Platform pills
+document.querySelectorAll('#platform-select .pill-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#platform-select .pill-btn').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); selectedPlatform=btn.dataset.platform;
+    document.getElementById('preview-platform-label').textContent=`Preview — ${selectedPlatform}`;
+  });
+});
+
+// Content type toggle
+const SECTIONS={text:'text-section',image:'image-section',both:'image-section',video:'video-section',pdf:'pdf-section',audio:'audio-section',doc:'doc-section'};
+const ALL_SECTIONS=['text-section','image-section','video-section','pdf-section','audio-section','doc-section'];
+document.querySelectorAll('#content-type-toggle .toggle-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#content-type-toggle .toggle-opt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); contentType=btn.dataset.type;
+    ALL_SECTIONS.forEach(s=>{ document.getElementById(s).style.display='none'; });
+    const showText = contentType==='text'||contentType==='both';
+    const showImg  = contentType==='image'||contentType==='both';
+    document.getElementById('text-section').style.display  = showText  ? 'block':'none';
+    document.getElementById('image-section').style.display = showImg   ? 'block':'none';
+    if (SECTIONS[contentType] && !['text','image','both'].includes(contentType))
+      document.getElementById(SECTIONS[contentType]).style.display='block';
+    updatePreview();
+  });
+});
+
+// Mark color
+document.querySelectorAll('#mark-color-toggle .toggle-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#mark-color-toggle .toggle-opt').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); markColor=btn.dataset.color; updatePreview();
+  });
+});
+
+// Corner
+document.querySelectorAll('.corner-opt[data-corner]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.corner-opt[data-corner]').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); markCorner=btn.dataset.corner; updatePreview();
+  });
+});
+
+// Mark size
+const msRange=document.getElementById('mark-size-range');
+msRange.addEventListener('input',()=>{ document.getElementById('mark-size-label').textContent=msRange.value+'px'; updatePreview(); });
+
+// Text input
+document.getElementById('sp-text').addEventListener('input', updatePreview);
+document.getElementById('append-mark-text').addEventListener('change', updatePreview);
+
+// Image upload
+document.getElementById('sp-image').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{ uploadedImage=img; updatePreview(); }; img.src=ev.target.result; };
+  reader.readAsDataURL(file);
+});
+
+// Video upload
+let videoMarkCorner='top-left', videoImg=null;
+document.getElementById('sp-video').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  // Hash
+  const hash=await hashFile(file);
+  document.getElementById('video-hash-val').textContent=hash;
+  document.getElementById('video-hash-display').style.display='block';
+  // Thumb via video element
+  const url=URL.createObjectURL(file);
+  const vid=document.createElement('video');
+  vid.src=url; vid.currentTime=0.1; vid.muted=true;
+  vid.addEventListener('seeked',()=>{
+    const c=document.getElementById('videoThumbCanvas');
+    const MAX_W=Math.min(560,window.innerWidth-64);
+    const sc=Math.min(1,MAX_W/vid.videoWidth);
+    c.width=Math.round(vid.videoWidth*sc); c.height=Math.round(vid.videoHeight*sc);
+    const ctx=c.getContext('2d'); ctx.drawImage(vid,0,0,c.width,c.height);
+    videoImg=vid;
+    document.getElementById('video-thumb-wrap').style.display='block';
+    drawVideoThumb();
+    URL.revokeObjectURL(url);
+  },{once:true});
+  vid.load();
+});
+
+let videoMarkSize=48;
+document.getElementById('video-mark-size').addEventListener('input',e=>{
+  videoMarkSize=parseInt(e.target.value);
+  document.getElementById('video-mark-size-label').textContent=videoMarkSize+'px';
+  drawVideoThumb();
+});
+document.querySelectorAll('#video-corners .corner-opt').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('#video-corners .corner-opt').forEach(b=>b.classList.remove('selected'));
+    btn.classList.add('selected'); videoMarkCorner=btn.dataset.vcorner; drawVideoThumb();
+  });
+});
+function drawVideoThumb() {
+  if(!videoImg) return;
+  const c=document.getElementById('videoThumbCanvas');
+  const ctx=c.getContext('2d'); ctx.drawImage(videoImg,0,0,c.width,c.height);
+  const ms=videoMarkSize, pad=Math.round(ms*0.5);
+  let mx=pad,my=pad;
+  if(videoMarkCorner==='top-right')    { mx=c.width-ms-pad; my=pad; }
+  if(videoMarkCorner==='bottom-left')  { mx=pad; my=c.height-ms*1.1-pad; }
+  if(videoMarkCorner==='bottom-right') { mx=c.width-ms-pad; my=c.height-ms*1.1-pad; }
+  const lum=cornerLum(ctx,videoMarkCorner,c.width,c.height,ms*2);
+  drawGTCMark(ctx,mx,my,ms,lum>0.35?'#000000':'#ffffff');
 }
+document.getElementById('download-video-cover-btn').addEventListener('click',()=>{
+  const c=document.getElementById('videoThumbCanvas');
+  const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='gtc-video-cover.png'; a.click();
+});
 
-function downloadManifest() {
-  if (!window._generatedManifest) { generateManifest(); }
-  const blob = new Blob([window._generatedManifest], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const title = document.getElementById('c-title').value || 'manifest';
-  const slug = title.toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,40);
-  a.href = url; a.download = `${slug}.json`; a.click();
-  URL.revokeObjectURL(url);
+// PDF / Carousel
+let pdfCoverImg=null;
+document.getElementById('sp-pdf').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const hash=await hashFile(file);
+  document.getElementById('pdf-hash-val').textContent=hash;
+  document.getElementById('pdf-hash-display').style.display='block';
+});
+document.getElementById('sp-pdf-cover').addEventListener('change', e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ const img=new Image(); img.onload=()=>{ pdfCoverImg=img; drawPdfCover(); }; img.src=ev.target.result; };
+  reader.readAsDataURL(file);
+});
+function drawPdfCover() {
+  if(!pdfCoverImg) return;
+  const c=document.getElementById('pdfCoverCanvas');
+  document.getElementById('pdf-cover-wrap').style.display='block';
+  const MAX_W=Math.min(560,window.innerWidth-64);
+  const sc=Math.min(1,MAX_W/pdfCoverImg.width);
+  c.width=Math.round(pdfCoverImg.width*sc); c.height=Math.round(pdfCoverImg.height*sc);
+  const ctx=c.getContext('2d'); ctx.drawImage(pdfCoverImg,0,0,c.width,c.height);
+  const ms=48, pad=Math.round(ms*0.5);
+  const lum=cornerLum(ctx,'top-left',c.width,c.height,ms*2);
+  drawGTCMark(ctx,pad,pad,ms,lum>0.35?'#000000':'#ffffff');
 }
+document.getElementById('download-pdf-cover-btn').addEventListener('click',()=>{
+  const c=document.getElementById('pdfCoverCanvas');
+  const a=document.createElement('a'); a.href=c.toDataURL('image/png'); a.download='gtc-pdf-cover.png'; a.click();
+});
 
-function updateSystemOptions() {
-  const provider = document.getElementById('c-provider').value;
-  const system = document.getElementById('c-system');
-  const defaults = {
-    'Anthropic':'Claude','OpenAI':'GPT','Google':'Gemini','Meta':'Llama',
-    'Midjourney':'Midjourney','Stability AI':'Stable Diffusion','Adobe':'Firefly'
-  };
-  if (defaults[provider]) system.value = defaults[provider];
-}
+// Audio
+document.getElementById('sp-audio').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const hash=await hashFile(file);
+  document.getElementById('audio-hash-val').textContent=hash;
+  document.getElementById('audio-hash-display').style.display='block';
+});
 
-// ============ VERIFY ============
-let REGISTRY = {
-  "29471bf99ce28554f6f413550b08cebc16157fdf97a1b5a51b0938347a74f76e":{id:"gtc-glasswing-001",title:"The Glasswing Translator, Issue 001 — The Forward-Deployed Prediction Error",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-001.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue. Anthropic is discussed as a subject. The conflict is structural."},{type:"editorial_dependency",statement:"Claude wrote the prose. Anthropic is discussed. The structural claims and the Cognitive Fusion framework are DJJ's."}]},
-  "2c127147be3c2d8a93723daf77a572e3215f64123d6201ddd49aae62ba39bbe3":{id:"gtc-glasswing-002",title:"The Glasswing Translator, Issue 002 — The Protocol That Disclaimed Itself",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-002.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue. Anthropic is discussed."},{type:"editorial_dependency",statement:"Claude wrote this. Anthropic is discussed. The structural claims are DJJ's."}]},
-  "a6b01c8a1978113d6fc731f66ba217bd90a2fc16ecf87ad552a28b4c9db3a4c3":{id:"gtc-glasswing-003",title:"The Glasswing Translator, Issue 003 — Containment Is Not Oversight",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-003.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on containment and oversight of AI systems including Anthropic's."}]},
-  "12ea8eedd48a89ce9cff552f081f9ef80972c40944a63da7c654782bdc8ecf2d":{id:"gtc-glasswing-004",title:"The Glasswing Translator, Issue 004 — The Disclosure Regime Collision",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-004.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue analyzing disclosure regime collisions that apply to Anthropic's products."}]},
-  "70e8622da43d0cc37624b984a2de4d4cc5886c221064c715c698fffde8af6342":{id:"gtc-glasswing-005",title:"The Glasswing Translator, Issue 005 — The Indemnity Gap",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-005.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on the indemnity gap that applies to Anthropic's deployment terms."}]},
-  "a72fe2720a93c40d6f6248acce6822141da459014fb4f650f236aef672102767":{id:"gtc-glasswing-006",title:"The Glasswing Translator, Issue 006 — Runtime Reversibility",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-006.json",disclosures:[{type:"provider_subject_overlap",statement:"Claude drafted this issue on runtime reversibility — a principle that applies to Claude itself."}]},
-  "fe2b2b142ec2bc2240f9ce5859a672742ed90d608d90406e9f6c1e2bbdc3234f":{id:"gtc-glasswing-007",title:"The Glasswing Translator, Issue 007 — Edge Governance",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-007.json",disclosures:[{type:"provider_subject_overlap",statement:"This issue analyzes enforcement actions directed at Anthropic. The conflict is doubled twice over."}]},
-  "03d1b5c81c3bd4bb23ef352c40e733dc424d429832c8b4a5ffae3ada4630fc12":{id:"gtc-glasswing-008",title:"The Glasswing Translator, Issue 008 — Self-Funded Assurance",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-008.json",disclosures:[{type:"provider_subject_overlap",statement:"This issue examines Anthropic's classifier and CJS framework. The model analyzing a verification framework is made by the framework's maker."}]},
-  "186ddffd475de0179029cf06a05307aeacee4f78c20903c1c34ca2ffd6867d12":{id:"gtc-glasswing-009",title:"The Glasswing Translator, Issue 009 — Pilot-Posture Persistence",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-009.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed in this issue and in companion GDN-003. The conflict is structural."}]},
-  "5ff4980c3296500ed0f3ba6ed9ea53c7d02384da63c930d83b709fead87fbf75":{id:"gtc-glasswing-010",title:"The Glasswing Translator, Issue 010 — Phantom Control",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-010.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed as a Project Glasswing participant and as the maker of the drafting tool."}]},
-  "e02da4217f8fcd6bd0c40ffa102bca7067e11d5891b294f38c4053697160b000":{id:"gtc-glasswing-011",title:"The Glasswing Translator, Issue 011 — Execution Drift",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-011.json",disclosures:[{type:"provider_subject_overlap",statement:"An Anthropic researcher and AI system co-produced a result cited in a policy report this issue examines."}]},
-  "5971c8616ac742aef33c9d7b105ec814fab06ef82a3f205baa5c210e26aa6bda":{id:"gtc-glasswing-012",title:"The Glasswing Translator, Issue 012 — Record Drift",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-012.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is discussed in the context of its Mythos model and Project Glasswing."}]},
-  "242d9323ce65674d3cbb6b28d6481e9856521b8c467393837ca48dbcb64c09cc":{id:"gtc-glasswing-013",title:"The Glasswing Translator, Issue 013 — Assurance Collapse",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-013.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic disclosed that Claude Mythos 5 published a malicious package during a safety evaluation. This issue examines that event using the tool made by the same company."}]},
-  "a512c21415db96c7919a4465a142c3246834d0129191e2763ca1fb6a7e6a6322":{id:"gtc-glasswing-014",title:"The Glasswing Translator, Issue 014 — Verification Void",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-014.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic co-authored the classified EO 14409 framework governing evaluation of frontier AI models including Claude."},{type:"regulatory_position",statement:"The classified status of the framework prevents independent verification by the deployer or the reader."}]},
-  "c05388d8b15a2496a6595bca320250dbd393905c21cd18d644184a020474e5d9":{id:"gtc-glasswing-015",title:"The Glasswing Translator, Issue 015 — Accountability Void",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-015.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic is a signatory to CISA's agentic AI guidance, a CAISI participant, and the developer of Claude Code."}]},
-  "48064126468578c59085fd2352ee74cb7552882a8b77929ec2e1589a8dc237f6":{id:"gtc-glasswing-016",title:"The Glasswing Translator, Issue 016 — Authorization Dissolution",url:"https://github.com/djaredj/Ground-Truth-Credential/blob/main/manifests/glasswing-016.json",disclosures:[{type:"provider_subject_overlap",statement:"Anthropic published the research on Claude agent malware escalation that this issue examines."},{type:"recursive_disclosure",statement:"Anthropic is a founding AAIF participant and MCP co-steward. This issue examines both. Three-part disclosure."}]}
-};
+// Document
+document.getElementById('sp-doc').addEventListener('change', async e=>{
+  const file=e.target.files[0]; if(!file) return;
+  const hash=await hashFile(file);
+  document.getElementById('doc-hash-val').textContent=hash;
+  document.getElementById('doc-hash-display').style.display='block';
+});
 
-function verifyHash() {
-  const input = document.getElementById('v-hash').value.trim().toLowerCase();
-  const result = document.getElementById('verify-result');
-  if (!input || !/^[a-f0-9]{64}$/.test(input)) {
-    result.className = 'result no-match';
-    result.innerHTML = '<div class="rt">Invalid hash</div><p>Enter a 64-character SHA-256 hex string.</p>';
-    return;
-  }
-  const match = REGISTRY[input];
-  if (match) {
-    let dhtml = '';
-    if (match.disclosures && match.disclosures.length) {
-      dhtml = '<div class="disclosures"><h3>Deployer Disclosures</h3>';
-      for (const d of match.disclosures) {
-        dhtml += `<div class="d-item"><span class="d-type">${d.type}</span><br>${d.statement}</div>`;
-      }
-      dhtml += '</div>';
+// GTC inline SVG base64 for preview
+const GTC_B64=btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 120"><rect x="8" y="4" width="84" height="76" rx="18" ry="18" fill="#0a0a0a"/><polygon points="14,72 14,112 44,80" fill="#0a0a0a"/></svg>');
+function escHtml(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>'); }
+
+function updatePreview() {
+  const textArea=document.getElementById('text-preview-area');
+  const imageWrapper=document.getElementById('image-preview-wrapper');
+  const canvas=document.getElementById('compositeCanvas');
+  const dlRow=document.getElementById('download-row');
+  const dlImgBtn=document.getElementById('download-image-btn');
+  const copyTxtBtn=document.getElementById('copy-text-btn');
+  const showText=contentType==='text'||contentType==='both';
+  const showImage=contentType==='image'||contentType==='both';
+
+  if (showText) {
+    textArea.style.display='block';
+    const txt=document.getElementById('sp-text').value||'';
+    const append=document.getElementById('append-mark-text').checked;
+    if (append && txt.trim()) {
+      // GTC superscript: always system sans-serif, via styled span
+      textArea.innerHTML = escHtml(txt) +
+        `<span class="gtc-sup" style="font-family:system-ui,-apple-system,'Inter',sans-serif;">GTC</span>`;
+    } else {
+      textArea.textContent=txt||'';
     }
-    result.className = 'result match';
-    result.innerHTML = `<div class="rt">Match found</div>
-      <p><strong>${match.title}</strong></p>
-      <p>Manifest ID: <code>${match.id}</code></p>
-      <p style="margin-top:.5rem"><a href="${match.url}" target="_blank" rel="noopener" style="color:inherit;font-family:var(--mono);font-size:.8125rem">View full manifest →</a></p>
-      ${dhtml}`;
+    copyTxtBtn.style.display='inline-flex';
+    dlRow.style.display='flex';
   } else {
-    result.className = 'result no-match';
-    result.innerHTML = `<div class="rt">No matching manifest</div>
-      <p>No GTC disclosure manifest was found for this content hash. The content may not be registered, or the file may have been modified since the manifest was created.</p>`;
+    textArea.style.display='none';
+    copyTxtBtn.style.display='none';
   }
-}
 
-function loadCustomRegistry() {
-  const status = document.getElementById('registry-status');
-  try {
-    const custom = JSON.parse(document.getElementById('custom-registry').value);
-    const count = Object.keys(custom).length;
-    Object.assign(REGISTRY, custom);
-    status.textContent = `Loaded ${count} entries.`;
-    status.style.color = 'var(--success-fg)';
-  } catch(e) {
-    status.textContent = 'Invalid JSON.';
-    status.style.color = 'var(--fail-fg)';
+  if (showImage && uploadedImage) {
+    imageWrapper.style.display='block';
+    compositeOnCanvas(canvas, uploadedImage, markCorner, msRange.value, markColor);
+    dlImgBtn.style.display='inline-flex';
+    dlRow.style.display='flex';
+  } else {
+    imageWrapper.style.display='none';
+    dlImgBtn.style.display='none';
   }
+  if (!showText && !showImage) dlRow.style.display='none';
 }
 
-// ============ AUDIT ============
-let auditRowCount = 0;
-function addAuditRow(data) {
-  auditRowCount++;
-  const r = auditRowCount;
-  const d = data || {};
-  const row = `<tr class="audit-row" id="ar-${r}">
-    <td><input type="text" id="ar-t-${r}" value="${d.title||''}" placeholder="Article title"></td>
-    <td><input type="text" id="ar-u-${r}" value="${d.url||''}" placeholder="URL" style="font-size:.75rem"></td>
-    <td><select id="ar-ai-${r}"><option value="Yes" ${d.ai==='Yes'?'selected':''}>Yes</option><option value="No" ${d.ai==='No'?'selected':''}>No</option><option value="Partial" ${d.ai==='Partial'?'selected':''}>Partial</option><option value="Unknown" ${d.ai==='Unknown'?'selected':''}>Unknown</option></select></td>
-    <td><input type="text" id="ar-sys-${r}" value="${d.system||''}" placeholder="Claude, GPT..." style="font-size:.75rem"></td>
-    <td><select id="ar-ov-${r}"><option value="No">No</option><option value="Yes" ${d.overlap==='Yes'?'selected':''}>Yes</option></select></td>
-    <td><select id="ar-fin-${r}"><option value="No">No</option><option value="Yes" ${d.financial==='Yes'?'selected':''}>Yes</option></select></td>
-    <td><select id="ar-pri-${r}"><option value="">—</option><option value="High" ${d.priority==='High'?'selected':''}>High</option><option value="Medium" ${d.priority==='Medium'?'selected':''}>Medium</option><option value="Low" ${d.priority==='Low'?'selected':''}>Low</option></select></td>
-    <td><select id="ar-man-${r}"><option value="No">No</option><option value="Yes" ${d.manifest==='Yes'?'selected':''}>Yes</option></select></td>
-    <td><button class="remove-btn" onclick="document.getElementById('ar-${r}').remove()">✕</button></td>
-  </tr>`;
-  document.getElementById('audit-body').insertAdjacentHTML('beforeend', row);
-}
+document.getElementById('refresh-preview-btn').addEventListener('click', updatePreview);
 
-// Start with 3 empty rows
-addAuditRow(); addAuditRow(); addAuditRow();
+document.getElementById('download-image-btn').addEventListener('click',()=>{
+  const a=document.createElement('a');
+  a.href=document.getElementById('compositeCanvas').toDataURL('image/png');
+  a.download='gtc-credentialed.png'; a.click();
+});
 
-function getAuditData() {
-  const rows = document.querySelectorAll('.audit-row');
-  return Array.from(rows).map(row => {
-    const id = row.id.replace('ar-','');
-    return {
-      title: document.getElementById(`ar-t-${id}`).value,
-      url: document.getElementById(`ar-u-${id}`).value,
-      ai: document.getElementById(`ar-ai-${id}`).value,
-      system: document.getElementById(`ar-sys-${id}`).value,
-      overlap: document.getElementById(`ar-ov-${id}`).value,
-      financial: document.getElementById(`ar-fin-${id}`).value,
-      priority: document.getElementById(`ar-pri-${id}`).value,
-      manifest: document.getElementById(`ar-man-${id}`).value
-    };
-  }).filter(r => r.title.trim());
-}
-
-function autoClassify() {
-  const rows = document.querySelectorAll('.audit-row');
-  rows.forEach(row => {
-    const id = row.id.replace('ar-','');
-    const ai = document.getElementById(`ar-ai-${id}`).value;
-    const overlap = document.getElementById(`ar-ov-${id}`).value;
-    const financial = document.getElementById(`ar-fin-${id}`).value;
-    const priSel = document.getElementById(`ar-pri-${id}`);
-    if (ai === 'No') { priSel.value = 'Low'; return; }
-    if (overlap === 'Yes' || financial === 'Yes') { priSel.value = 'High'; return; }
-    if (ai === 'Yes' || ai === 'Partial') { priSel.value = 'Medium'; return; }
-    priSel.value = 'Low';
+document.getElementById('copy-text-btn').addEventListener('click',()=>{
+  const txt=document.getElementById('sp-text').value;
+  const append=document.getElementById('append-mark-text').checked;
+  // Clipboard output: GTC in sans-serif is implicit via Unicode, use plain [GTC] marker
+  // that survives platform stripping, with a note
+  const out = (append && txt.trim()) ? txt + ' [GTC]' : txt;
+  navigator.clipboard.writeText(out).then(()=>{
+    const btn=document.getElementById('copy-text-btn');
+    const orig=btn.textContent; btn.textContent='Copied!';
+    setTimeout(()=>{ btn.textContent=orig; },1800);
   });
-  updateAuditSummary();
-}
+});
 
-function updateAuditSummary() {
-  const data = getAuditData();
-  document.getElementById('a-total').textContent = data.length;
-  document.getElementById('a-ai').textContent = data.filter(r => r.ai === 'Yes' || r.ai === 'Partial').length;
-  document.getElementById('a-overlap').textContent = data.filter(r => r.overlap === 'Yes').length;
-  document.getElementById('a-financial').textContent = data.filter(r => r.financial === 'Yes').length;
-  document.getElementById('a-high').textContent = data.filter(r => r.priority === 'High').length;
-  document.getElementById('a-med').textContent = data.filter(r => r.priority === 'Medium').length;
-  document.getElementById('a-has').textContent = data.filter(r => r.manifest === 'Yes').length;
-  document.getElementById('audit-summary').style.display = 'block';
-}
+/* ─── SOCIAL MANIFEST GENERATION ─────────────────────────── */
+document.getElementById('generate-social-manifest-btn').addEventListener('click', async ()=>{
+  const now=new Date().toISOString();
+  const platform=selectedPlatform||'Social media';
+  const platformId=platform.toLowerCase().replace(/[^a-z0-9]/g,'-');
+  const dateStr=now.substring(0,10);
+  const postText=document.getElementById('sp-text').value;
 
-function exportAuditCSV() {
-  const data = getAuditData();
-  const headers = ['Title','URL','AI Involvement','AI System','Subject Overlap','Financial Relationship','Priority','Manifest Exists'];
-  const csvRows = [headers.join(',')];
-  data.forEach(r => {
-    csvRows.push([r.title,r.url,r.ai,r.system,r.overlap,r.financial,r.priority,r.manifest]
-      .map(v => `"${(v||'').replace(/"/g,'""')}"`).join(','));
+  // Determine hash based on content type
+  let contentHash='(no hashable content provided)', hashScope='N/A';
+  if (['text','both'].includes(contentType) && postText.trim()) {
+    contentHash=await sha256(postText); hashScope='Raw text body of the social post.';
+  }
+  const videoH=document.getElementById('video-hash-val').textContent;
+  const pdfH  =document.getElementById('pdf-hash-val').textContent;
+  const audioH=document.getElementById('audio-hash-val').textContent;
+  const docH  =document.getElementById('doc-hash-val').textContent;
+  if (contentType==='video'   && videoH) { contentHash=videoH; hashScope='SHA-256 of the uploaded video file.'; }
+  if (contentType==='pdf'     && pdfH)   { contentHash=pdfH;   hashScope='SHA-256 of the uploaded PDF/carousel file.'; }
+  if (contentType==='audio'   && audioH) { contentHash=audioH; hashScope='SHA-256 of the uploaded audio file.'; }
+  if (contentType==='doc'     && docH)   { contentHash=docH;   hashScope='SHA-256 of the uploaded document file.'; }
+
+  const disclosures=[];
+  if (document.getElementById('dc-overlap').checked)    disclosures.push({type:'provider_subject_overlap',statement:'The model used to produce this post was built by the same provider this post analyzes or discusses.',severity:'structural',mitigation:"Conflict named in post. Structural claims are the deployer's. Prose is the AI's."});
+  if (document.getElementById('dc-editorial').checked)  disclosures.push({type:'editorial_dependency',statement:"The deployer depends on the AI provider's tool to produce content about that same provider.",severity:'structural',mitigation:"Disclosed in the post's GTC manifest."});
+  if (document.getElementById('dc-financial').checked)  disclosures.push({type:'financial_relationship',statement:'The deployer has a financial relationship with the AI provider used to produce this content.',severity:'material',mitigation:'Named and disclosed here.'});
+  if (document.getElementById('dc-recursive').checked)  disclosures.push({type:'recursive_disclosure',statement:'This post was produced using the AI system it describes or references. GTC is applied to itself.',severity:'structural',mitigation:"Recursion is the protocol's premise, not a flaw."});
+  const extra=document.getElementById('sp-extra-disclosure').value.trim();
+  if (extra) disclosures.push({type:'other',statement:extra,severity:'contextual',mitigation:''});
+
+  const manifest={
+    schema_version:'0.1',
+    manifest_id:`gtc-social-${platformId}-${dateStr}`,
+    created_at:now,
+    deployer:{name:document.getElementById('sp-deployer').value,organization:document.getElementById('sp-org').value},
+    content:{title:`${platform} post — ${dateStr}`,type:'post',content_format:contentType,platform,content_hash:contentHash,hash_method:'SHA-256',hash_scope:hashScope},
+    ai_system:{provider:document.getElementById('sp-ai-provider').value,system:'Claude',model_version:document.getElementById('sp-ai-model').value,usage_type:'drafting',usage_description:document.getElementById('sp-ai-desc').value},
+    disclosures,
+    verification:{verification_page:'https://djaredj.github.io/ground-truth-credential/tools/'}
+  };
+  const json=JSON.stringify(manifest,null,2);
+  document.getElementById('social-manifest-json-out').textContent=json;
+  document.getElementById('social-manifest-output').style.display='block';
+  document.getElementById('social-manifest-output').scrollIntoView({behavior:'smooth'});
+  document.getElementById('copy-social-manifest-btn').onclick=()=>navigator.clipboard.writeText(json);
+  document.getElementById('download-social-manifest-btn').onclick=()=>dlJson(json,`${manifest.manifest_id}.json`);
+});
+
+/* ─── SITE AUDIT TAB ──────────────────────────────────────── */
+const REQUIRED_FIELDS=['schema_version','manifest_id','created_at','deployer','content','ai_system','disclosures'];
+
+document.getElementById('run-audit-btn').addEventListener('click', async ()=>{
+  const auditText=document.getElementById('audit-text').value;
+  const auditFile=document.getElementById('audit-file').files[0];
+  const manifestRaw=document.getElementById('audit-manifest').value.trim();
+  if (!manifestRaw) { alert('Paste the manifest JSON first.'); return; }
+
+  // Parse manifest
+  let manifest;
+  try { manifest=JSON.parse(manifestRaw); }
+  catch(e) { alert('Invalid JSON — check the manifest.'); return; }
+
+  // Compute content hash
+  let computed='';
+  if (auditFile)          computed=await hashFile(auditFile);
+  else if (auditText.trim()) computed=await sha256(auditText);
+
+  const manifestHash=manifest?.content?.content_hash||'(not found)';
+  document.getElementById('audit-computed-hash').textContent = computed || '(no content provided)';
+  document.getElementById('audit-manifest-hash').textContent = manifestHash;
+
+  // Hash match
+  const matchEl=document.getElementById('audit-hash-match');
+  if (!computed) {
+    matchEl.textContent='No content'; matchEl.className='status-chip chip-info';
+  } else if (computed===manifestHash) {
+    matchEl.textContent='✓ Match'; matchEl.className='status-chip chip-ok';
+  } else {
+    matchEl.textContent='✗ Mismatch'; matchEl.className='status-chip chip-err';
+  }
+
+  // Disclosure check
+  const disclosures=Array.isArray(manifest.disclosures)?manifest.disclosures:[];
+  const discList=document.getElementById('audit-disclosure-list');
+  discList.innerHTML='';
+  if (disclosures.length===0) {
+    discList.innerHTML='<div class="audit-result-row"><span class="hash-label">Disclosures</span><span class="status-chip chip-err">None found</span></div>';
+  } else {
+    disclosures.forEach((d,i)=>{
+      const row=document.createElement('div'); row.className='audit-result-row';
+      row.innerHTML=`<span class="hash-label">D${i+1}</span>
+        <div style="flex:1;">
+          <span class="status-chip chip-ok" style="margin-right:8px;">${d.type||'unknown'}</span>
+          <span class="status-chip chip-info">${d.severity||'?'}</span>
+          <div style="font-size:12px;margin-top:6px;color:var(--ink);">${d.statement||''}</div>
+          ${d.mitigation?`<div style="font-size:11px;color:var(--muted);margin-top:4px;">Mitigation: ${d.mitigation}</div>`:''}
+        </div>`;
+      discList.appendChild(row);
+    });
+  }
+
+  // Schema check
+  const schemaList=document.getElementById('audit-schema-list');
+  schemaList.innerHTML='';
+  let schemaPass=true;
+  REQUIRED_FIELDS.forEach(f=>{
+    const present=f in manifest;
+    if (!present) schemaPass=false;
+    const row=document.createElement('div'); row.className='audit-result-row';
+    row.innerHTML=`<span class="hash-label">${f}</span><span class="status-chip ${present?'chip-ok':'chip-err'}">${present?'✓ Present':'✗ Missing'}</span>`;
+    schemaList.appendChild(row);
   });
-  const blob = new Blob([csvRows.join('\n')], {type:'text/csv'});
-  const url = URL.createObjectURL(blob);
+  if (manifest.schema_version && manifest.schema_version!=='0.1') {
+    const row=document.createElement('div'); row.className='audit-result-row';
+    row.innerHTML=`<span class="hash-label">schema_version</span><span class="status-chip chip-err">Unknown version: ${manifest.schema_version}</span>`;
+    schemaList.appendChild(row);
+    schemaPass=false;
+  }
+
+  // Overall
+  const hashOk = !computed || computed===manifestHash;
+  const discOk = disclosures.length>0;
+  const overall = hashOk && discOk && schemaPass;
+  const overallEl=document.getElementById('audit-overall');
+  overallEl.textContent = overall?'✓ Pass':'✗ Issues found';
+  overallEl.className = `status-chip ${overall?'chip-ok':'chip-err'}`;
+  document.getElementById('audit-results').style.display='block';
+  document.getElementById('audit-results').scrollIntoView({behavior:'smooth'});
+
+  // Download report
+  const report={audit_timestamp:new Date().toISOString(),content_hash_computed:computed,manifest_hash:manifestHash,hash_match:computed===manifestHash,disclosure_count:disclosures.length,schema_fields_present:REQUIRED_FIELDS.filter(f=>f in manifest),schema_fields_missing:REQUIRED_FIELDS.filter(f=>!(f in manifest)),overall_pass:overall,manifest};
+  document.getElementById('download-audit-report-btn').onclick=()=>dlJson(JSON.stringify(report,null,2),`gtc-audit-${new Date().toISOString().substring(0,10)}.json`);
+});
+
+/* ═══════════════════════════════════════════════════════════════
+   BULK AUDIT SPREADSHEET
+   ═══════════════════════════════════════════════════════════════ */
+
+const BULK_COLS = ['url','title','type','expected_hash','live_hash','manifest_id','platform','notes'];
+const CONTENT_TYPES = ['article','post','report','image','document','presentation','audio','video','pdf','other'];
+let bulkRowCount = 0;
+
+/* ── Row factory ─────────────────────────────────────────────── */
+function makeBulkRow(data = {}) {
+  bulkRowCount++;
+  const id = `br-${bulkRowCount}`;
+  const tr = document.createElement('tr');
+  tr.id = id;
+  tr.dataset.rowid = bulkRowCount;
+
+  const typeOpts = CONTENT_TYPES.map(t =>
+    `<option value="${t}" ${data.type===t?'selected':''}>${t}</option>`
+  ).join('');
+
+  tr.innerHTML = `
+    <td class="col-url">
+      <input type="text" data-col="url" value="${esc(data.url||'')}" placeholder="https://…">
+    </td>
+    <td class="col-title">
+      <input type="text" data-col="title" value="${esc(data.title||'')}" placeholder="Post title">
+    </td>
+    <td class="col-type">
+      <select data-col="type"><option value="">—</option>${typeOpts}</select>
+    </td>
+    <td class="col-hash">
+      <input type="text" data-col="expected_hash" value="${esc(data.expected_hash||'')}" placeholder="SHA-256 from manifest">
+    </td>
+    <td class="col-live">
+      <input type="text" data-col="live_hash" value="${esc(data.live_hash||'')}" placeholder="SHA-256 from live content">
+    </td>
+    <td class="col-mid">
+      <input type="text" data-col="manifest_id" value="${esc(data.manifest_id||'')}" placeholder="gtc-…">
+    </td>
+    <td class="col-mid">
+      <input type="text" data-col="platform" value="${esc(data.platform||'')}" placeholder="LinkedIn…">
+    </td>
+    <td class="col-notes">
+      <input type="text" data-col="notes" value="${esc(data.notes||'')}" placeholder="Notes">
+    </td>
+    <td class="col-status">
+      <span class="row-status rs-pending" id="rs-${id}">Pending</span>
+    </td>
+    <td class="col-del">
+      <button class="del-row-btn" title="Delete row">✕</button>
+    </td>`;
+
+  tr.querySelector('.del-row-btn').addEventListener('click', () => {
+    tr.remove();
+    refreshSummary();
+  });
+
+  return tr;
+}
+
+function esc(s) {
+  return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function getRowData(tr) {
+  const d = {};
+  tr.querySelectorAll('[data-col]').forEach(el => {
+    d[el.dataset.col] = el.value.trim();
+  });
+  return d;
+}
+
+function seedRows() {
+  // Start with 3 blank rows
+  const tbody = document.getElementById('bulk-tbody');
+  for (let i = 0; i < 3; i++) tbody.appendChild(makeBulkRow());
+}
+seedRows();
+
+/* ── Add row ─────────────────────────────────────────────────── */
+document.getElementById('bulk-add-row-btn').addEventListener('click', () => {
+  document.getElementById('bulk-tbody').appendChild(makeBulkRow());
+});
+
+/* ── Clear all ───────────────────────────────────────────────── */
+document.getElementById('bulk-clear-btn').addEventListener('click', () => {
+  if (!confirm('Clear all rows?')) return;
+  document.getElementById('bulk-tbody').innerHTML = '';
+  bulkRowCount = 0;
+  document.getElementById('bulk-summary').style.display = 'none';
+  seedRows();
+});
+
+/* ── CSV import ──────────────────────────────────────────────── */
+document.getElementById('bulk-csv-import').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const rows = parseCSV(ev.target.result);
+    if (!rows.length) { alert('No data found in CSV.'); return; }
+
+    const tbody = document.getElementById('bulk-tbody');
+    const existingCount = tbody.querySelectorAll('tr').length;
+
+    let mode = 'append';
+    if (existingCount > 0) {
+      // Ask the user — three-way dialog
+      const choice = confirm(
+        `You have ${existingCount} existing row(s).\n\nClick OK to APPEND the imported rows.\nClick Cancel to REPLACE all rows with the imported data.`
+      );
+      mode = choice ? 'append' : 'replace';
+    }
+
+    if (mode === 'replace') {
+      tbody.innerHTML = '';
+      bulkRowCount = 0;
+    }
+
+    rows.forEach(r => tbody.appendChild(makeBulkRow(r)));
+    document.getElementById('bulk-summary').style.display = 'none';
+  };
+  reader.readAsText(file);
+  // Reset so same file can be re-imported
+  e.target.value = '';
+});
+
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+
+  // Detect if first row is a header (contains any of our col names)
+  const firstCells = splitCSVLine(lines[0]).map(c => c.toLowerCase().trim());
+  const isHeader = BULK_COLS.some(col => firstCells.includes(col));
+
+  let colMap = {}; // index → col name
+  if (isHeader) {
+    firstCells.forEach((cell, i) => { if (BULK_COLS.includes(cell)) colMap[i] = cell; });
+  } else {
+    // Positional: url, title, type, expected_hash, live_hash, manifest_id, platform, notes
+    BULK_COLS.forEach((col, i) => { colMap[i] = col; });
+  }
+
+  const dataLines = isHeader ? lines.slice(1) : lines;
+  return dataLines.map(line => {
+    const cells = splitCSVLine(line);
+    const row = {};
+    Object.entries(colMap).forEach(([i, col]) => {
+      row[col] = cells[parseInt(i)] || '';
+    });
+    return row;
+  }).filter(r => r.url || r.title || r.expected_hash); // skip truly empty rows
+}
+
+function splitCSVLine(line) {
+  // RFC 4180-aware split (handles quoted fields with commas)
+  const result = [];
+  let cur = '', inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQ && line[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (ch === ',' && !inQ) {
+      result.push(cur.trim()); cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
+/* ── Download CSV template ───────────────────────────────────── */
+document.getElementById('bulk-download-template-btn').addEventListener('click', () => {
+  const header = BULK_COLS.join(',');
+  const example = [
+    'https://cognitivefusion.systems/glasswing-014.html',
+    'Glasswing 014', 'article',
+    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    '', 'gtc-glasswing-014-2026-08-12', 'LinkedIn', 'Issue 014 — Verification Void'
+  ].map(v => `"${v}"`).join(',');
+  const csv = header + '\n' + example;
   const a = document.createElement('a');
-  a.href = url; a.download = 'gtc-audit.csv'; a.click();
-  URL.revokeObjectURL(url);
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv'}));
+  a.download = 'gtc-bulk-audit-template.csv'; a.click();
+});
+
+/* ── Run bulk audit ──────────────────────────────────────────── */
+document.getElementById('bulk-run-btn').addEventListener('click', () => {
+  const rows = document.querySelectorAll('#bulk-tbody tr');
+  let pass=0, fail=0, warn=0, pending=0;
+
+  rows.forEach(tr => {
+    const d = getRowData(tr);
+    const statusEl = tr.querySelector('.row-status');
+
+    const hasExpected = d.expected_hash.length === 64;
+    const hasLive     = d.live_hash.length === 64;
+    const hasManifest = !!d.manifest_id;
+
+    let status, cls;
+
+    if (!hasExpected && !hasLive) {
+      // No hashes at all — flag for follow-up
+      status = 'No hash'; cls = 'rs-warn'; warn++;
+    } else if (!hasExpected && hasLive) {
+      // Live hash present but nothing to compare to
+      status = 'No manifest hash'; cls = 'rs-warn'; warn++;
+    } else if (hasExpected && !hasLive) {
+      // Expected known but not yet verified
+      status = 'Unverified'; cls = 'rs-pending'; pending++;
+    } else {
+      // Both present — compare
+      if (d.expected_hash.toLowerCase() === d.live_hash.toLowerCase()) {
+        status = hasManifest ? '✓ Pass' : '✓ Hash OK'; cls = 'rs-pass'; pass++;
+      } else {
+        status = '✗ Mismatch'; cls = 'rs-fail'; fail++;
+      }
+    }
+
+    statusEl.textContent = status;
+    statusEl.className = `row-status ${cls}`;
+  });
+
+  refreshSummary(pass, fail, warn, pending, rows.length);
+});
+
+function refreshSummary(pass=0, fail=0, warn=0, pending=0, total=0) {
+  const el = document.getElementById('bulk-summary');
+  if (total === 0) { el.style.display='none'; return; }
+  document.getElementById('bs-total').textContent   = total;
+  document.getElementById('bs-pass').textContent    = pass;
+  document.getElementById('bs-fail').textContent    = fail;
+  document.getElementById('bs-warn').textContent    = warn;
+  document.getElementById('bs-pending').textContent = pending;
+  el.style.display = 'flex';
 }
+
+/* ── Export CSV ──────────────────────────────────────────────── */
+document.getElementById('bulk-export-csv-btn').addEventListener('click', () => {
+  const rows = document.querySelectorAll('#bulk-tbody tr');
+  const lines = [
+    [...BULK_COLS, 'status'].join(','),
+    ...Array.from(rows).map(tr => {
+      const d = getRowData(tr);
+      const status = tr.querySelector('.row-status')?.textContent || 'Pending';
+      return [...BULK_COLS.map(c => `"${(d[c]||'').replace(/"/g,'""')}"`), `"${status}"`].join(',');
+    })
+  ];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([lines.join('\n')], {type:'text/csv'}));
+  a.download = `gtc-bulk-audit-${new Date().toISOString().substring(0,10)}.csv`;
+  a.click();
+});
+
+/* ── Export JSON ─────────────────────────────────────────────── */
+document.getElementById('bulk-export-json-btn').addEventListener('click', () => {
+  const rows = document.querySelectorAll('#bulk-tbody tr');
+  const records = Array.from(rows).map(tr => {
+    const d = getRowData(tr);
+    const status = tr.querySelector('.row-status')?.textContent || 'Pending';
+    const hasExpected = d.expected_hash.length === 64;
+    const hasLive     = d.live_hash.length === 64;
+    return {
+      ...d,
+      hash_match: (hasExpected && hasLive)
+        ? d.expected_hash.toLowerCase() === d.live_hash.toLowerCase()
+        : null,
+      audit_status: status,
+      audited_at: new Date().toISOString()
+    };
+  });
+  const report = {
+    schema: 'gtc-bulk-audit-v0.1',
+    generated_at: new Date().toISOString(),
+    total: records.length,
+    pass:  records.filter(r => r.audit_status.includes('Pass') || r.audit_status.includes('Hash OK')).length,
+    fail:  records.filter(r => r.audit_status.includes('Mismatch')).length,
+    records
+  };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], {type:'application/json'}));
+  a.download = `gtc-bulk-audit-${new Date().toISOString().substring(0,10)}.json`;
+  a.click();
+});
 </script>
 </body>
 </html>
