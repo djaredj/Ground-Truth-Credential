@@ -90,7 +90,7 @@ See the [annotated example](examples/example-manifest.json) and the [JSON schema
 
 1. Write your content.
 2. Generate the SHA-256 hash of the final published version.
-3. Fill in the manifest fields per the schema — or use the Create Manifest tab in [GTC Tools](https://djaredj.github.io/ground-truth-credential/tools/).
+3. Fill in the manifest fields per the schema — or use the Create Manifest tab in [GTC Tools](https://djaredj.github.io/Ground-Truth-Credential/tools/).
 4. Commit the manifest to this repository or publish it at a stable URL.
 5. Place the GTC mark on your content per the [usage specification](SPECIFICATION.md).
 
