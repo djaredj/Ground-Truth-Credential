@@ -68,7 +68,7 @@ Schema: [`schema/gtc-manifest-v0.1.json`](schema/gtc-manifest-v0.1.json)
 
 ### Using the GTC Tools
 
-**[→ Open GTC Tools](https://djaredj.github.io/ground-truth-credential/tools/)** — runs entirely in-browser, no account required.
+**[→ Open GTC Tools](https://djaredj.github.io/Ground-Truth-Credential/tools/)** — runs entirely in-browser, no account required.
 
 Four tabs:
 
