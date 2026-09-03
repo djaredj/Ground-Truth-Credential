@@ -50,7 +50,7 @@
       padding: 16px var(--pad);
       display: flex; align-items: center; gap: 14px;
     }
-    .gtc-logo { width: 30px; height: 30px; flex-shrink: 0; }
+    .gtc-logo { height: 30px; width: auto; flex-shrink: 0; }
     header h1 { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
     header h1 span { font-weight: 400; color: var(--muted); letter-spacing: 0; text-transform: none; }
     @media (max-width: 440px) { header h1 span { display: none; } }
@@ -414,10 +414,7 @@
 
 <!-- HEADER -->
 <header>
-  <svg class="gtc-logo" viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg" aria-label="GTC">
-    <rect x="8" y="4" width="84" height="76" rx="18" ry="18" fill="#0a0a0a"/>
-    <polygon points="14,72 14,112 44,80" fill="#0a0a0a"/>
-  </svg>
+  <img class="gtc-logo" src="../mark/GTC-symbol-black.png" alt="GTC">
   <h1>GTC Tools <span>— Ground Truth Credential</span></h1>
 </header>
 
