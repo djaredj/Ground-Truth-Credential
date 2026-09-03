@@ -4,6 +4,22 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <title>GTC Tools — Ground Truth Credential</title>
+
+  <!-- Image Verifier tab dependency: @contentauth/c2pa-web needs an import
+       map to resolve its bare "highgain" import to a local file (browsers
+       can't resolve bare specifiers without one). Self-hosted, no CDN. -->
+  <script type="importmap">
+  {
+    "imports": {
+      "highgain": "./lib/c2pa-web/highgain.js"
+    }
+  }
+  </script>
+  <script type="module">
+    import { createC2pa } from './lib/c2pa-web/index.js';
+    window.createC2pa = createC2pa; // bridges the ES module into the classic <script> below
+  </script>
+
   <style>
     /* ─── TOKENS ─────────────────────────────────────────────── */
     :root {
@@ -346,6 +362,51 @@
       display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px;
     }
     footer a { color: var(--muted); text-decoration: underline; }
+
+    /* ─── IMAGE VERIFIER ─────────────────────────────────────── */
+    .iv-dropzone {
+      border: 1.5px dashed var(--rule); border-radius: var(--radius);
+      padding: 36px 20px; text-align: center; cursor: pointer;
+      background: #fff; transition: border-color 0.15s, background 0.15s;
+    }
+    .iv-dropzone:hover, .iv-dropzone.dragover { border-color: var(--black); background: var(--mid); }
+    .iv-dropzone-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+    .iv-filename { margin-top: 8px; font-size: 12px; color: var(--ink); font-family: var(--mono); }
+    .iv-progress { margin-top: 14px; font-size: 12px; color: var(--muted); font-style: italic; }
+
+    .iv-report { margin-top: 24px; }
+    .iv-report-header {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 10px;
+      border-bottom: 2px solid var(--black); padding-bottom: 10px; margin-bottom: 18px;
+    }
+    .iv-block { margin-bottom: 22px; }
+    .iv-kv { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+    .iv-kv td { padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+    .iv-kv td:first-child {
+      color: var(--muted); width: 38%; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .iv-kv td:last-child { font-family: var(--mono); font-size: 12px; word-break: break-word; }
+
+    .iv-explainer { font-size: 12.5px; color: var(--ink); line-height: 1.6; }
+    .iv-heuristic-block {
+      background: var(--mid); border: 1px solid var(--rule);
+      border-radius: var(--radius); padding: 14px 16px;
+    }
+    .iv-nonauth {
+      font-weight: 700; font-size: 9px; color: var(--danger);
+      letter-spacing: 0.08em; text-transform: uppercase; margin-left: 6px;
+    }
+    .iv-heuristics, .iv-limitations { margin: 10px 0 0 18px; }
+    .iv-heuristics li, .iv-limitations li { font-size: 12.5px; color: var(--ink); margin-bottom: 6px; line-height: 1.6; }
+    .iv-limitations li { color: var(--muted); }
+    .iv-raw-toggle summary { cursor: pointer; font-size: 11px; color: var(--muted); margin-top: 6px; }
+    .iv-raw-toggle pre {
+      font-family: var(--mono); font-size: 10.5px; background: var(--mid);
+      border: 1px solid var(--rule); border-radius: var(--radius);
+      padding: 10px; overflow-x: auto; max-height: 240px; margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -367,6 +428,9 @@
     Social Post <span class="tab-new">NEW</span>
   </button>
   <button class="tab-btn"        role="tab" aria-selected="false" data-tab="audit">Site Audit</button>
+  <button class="tab-btn"        role="tab" aria-selected="false" data-tab="imgverify">
+    Image Verifier <span class="tab-new">NEW</span>
+  </button>
 </nav>
 
 <!-- ═══════════════════════════════════════════════════════════ -->
@@ -866,6 +930,81 @@
     CSV column order: <code>url, title, type, expected_hash, live_hash, manifest_id, platform, notes</code>.
     First row may be a header (auto-detected). All columns except <em>url</em> are optional.
     <button class="btn btn-secondary btn-sm" id="bulk-download-template-btn" style="margin-left:10px;">Download CSV Template</button>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 5 — IMAGE VERIFIER                                    -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<section class="tab-panel" id="tab-imgverify">
+  <div class="section-label">Image Verifier</div>
+  <p class="lead">
+    Reads only what an image file itself declares — a C2PA manifest and XMP/EXIF
+    metadata — plus a small set of clearly-labeled, non-authoritative heuristic flags.
+    Everything runs locally in your browser; nothing is uploaded.
+  </p>
+
+  <input type="file" id="iv-file-input" accept="image/*" style="display:none;">
+  <div class="iv-dropzone" id="iv-dropzone">
+    <div class="iv-dropzone-label">Drop an image here, or click to choose a file</div>
+    <div class="iv-filename" id="iv-filename"></div>
+  </div>
+  <div class="iv-progress" id="iv-progress" style="display:none;">Analyzing…</div>
+
+  <!-- ============ DETAILED REPORT ============ -->
+  <div class="iv-report output-box" id="iv-report" style="display:none;">
+
+    <div class="iv-report-header">
+      <div class="section-label" style="margin:0;padding:0;border:none;">Detailed Report</div>
+      <span class="status-chip chip-info" id="iv-classification-badge">Undeclared</span>
+    </div>
+
+    <div class="iv-block">
+      <div class="hash-label" style="margin-bottom:8px;">File</div>
+      <table class="iv-kv" id="iv-file-table"></table>
+    </div>
+
+    <div class="iv-block">
+      <div class="hash-label" style="margin-bottom:8px;">C2PA Manifest</div>
+      <table class="iv-kv" id="iv-c2pa-table"></table>
+      <div id="iv-c2pa-raw"></div>
+    </div>
+
+    <div class="iv-block">
+      <div class="hash-label" style="margin-bottom:8px;">XMP / EXIF Metadata</div>
+      <table class="iv-kv" id="iv-exif-table"></table>
+    </div>
+
+    <div class="iv-block">
+      <div class="hash-label" style="margin-bottom:8px;">Declared Classification</div>
+      <p class="iv-explainer" id="iv-classification-explainer"></p>
+    </div>
+
+    <div class="iv-block iv-heuristic-block">
+      <div class="hash-label" style="margin-bottom:2px;">
+        Heuristic Indicators<span class="iv-nonauth">Non-authoritative</span>
+      </div>
+      <p class="iv-explainer" style="color:var(--muted);margin-top:6px;">
+        Pattern-based signals, not proof. They never change the Declared Classification above
+        and can be wrong in either direction.
+      </p>
+      <ul class="iv-heuristics" id="iv-heuristics-list"></ul>
+    </div>
+
+    <div class="iv-block">
+      <div class="hash-label" style="margin-bottom:8px;">What This Check Does Not Tell You</div>
+      <ul class="iv-limitations">
+        <li>Metadata can be stripped, forged, or never present in the first place — absence is not evidence of AI generation.</li>
+        <li>No OSINT / reverse image search is performed (would require sending the image to a third party).</li>
+        <li>No GAN-fingerprint, frequency-domain, or ML-based deepfake classifier is run in-browser; results here are metadata-only plus light heuristics.</li>
+        <li>A validated C2PA chain proves the declared source type came from that signer — it does not independently verify the signer told the truth.</li>
+      </ul>
+    </div>
+
+    <div class="manifest-actions">
+      <button class="btn btn-secondary btn-sm" id="iv-export-json-btn">Export Report (JSON)</button>
+      <button class="btn btn-secondary btn-sm" id="iv-export-pdf-btn">Export Report (Print/PDF)</button>
+    </div>
   </div>
 </section>
 
@@ -1707,6 +1846,364 @@ document.getElementById('bulk-export-json-btn').addEventListener('click', () => 
   a.download = `gtc-bulk-audit-${new Date().toISOString().substring(0,10)}.json`;
   a.click();
 });
+</script>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- IMAGE VERIFIER — dependencies + logic                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<script src="lib/exif.js"></script>
+<script>
+(function () {
+  "use strict";
+  // Reuses the page's existing sha256(data) / hashFile(file) helpers,
+  // defined in the script block above.
+
+  const dropzone = document.getElementById("iv-dropzone");
+  const fileInput = document.getElementById("iv-file-input");
+  const progressEl = document.getElementById("iv-progress");
+  const reportEl = document.getElementById("iv-report");
+
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", () => dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (e) => {
+    e.preventDefault();
+    dropzone.classList.remove("dragover");
+    if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+  });
+  fileInput.addEventListener("change", (e) => {
+    if (e.target.files[0]) handleFile(e.target.files[0]);
+  });
+
+  async function handleFile(file) {
+    document.getElementById("iv-filename").textContent = file.name;
+    progressEl.style.display = "block";
+    reportEl.style.display = "none";
+
+    const buffer = await file.arrayBuffer();
+    const report = await buildReport(file, buffer);
+
+    renderReport(report);
+    progressEl.style.display = "none";
+    reportEl.style.display = "block";
+
+    window._ivLastReport = report;
+  }
+
+  // ------------------------------------------------------------
+  // Report assembly — see schema/gtc-image-verification-schema-v0.1.json
+  // ------------------------------------------------------------
+  async function buildReport(file, buffer) {
+    const fileInfo = await getFileInfo(file, buffer);
+    const c2pa = await readC2PA(file, buffer);
+    const xmpExif = await readXmpExif(file, buffer);
+    const classification = deriveClassification(c2pa, xmpExif);
+    const heuristics = runHeuristics(xmpExif, c2pa);
+
+    return {
+      schema_version: "0.1",
+      generated_at: new Date().toISOString(),
+      file: fileInfo,
+      c2pa: c2pa,
+      metadata: xmpExif,
+      classification: classification,
+      heuristics: heuristics,
+      limitations: [
+        "Metadata can be stripped or forged; absence is not evidence of AI generation.",
+        "No OSINT / reverse image search performed.",
+        "No ML-based deepfake or GAN-fingerprint classifier run in-browser.",
+        "C2PA validation confirms the signed chain, not the truthfulness of the signer's claim."
+      ]
+    };
+  }
+
+  // ---- 1. File identity (reuses the page's global hashFile helper) ----
+  async function getFileInfo(file, buffer) {
+    const sha256Hex = await hashFile(file);
+    return { name: file.name, size_bytes: file.size, mime_type: file.type || "unknown", sha256: sha256Hex };
+  }
+
+  // ---- 2. C2PA ----
+  // Uses @contentauth/c2pa-web (WASM, runs in a Worker). createC2pa() is
+  // initialized once and cached; the ~8MB WASM binary is fetched lazily on
+  // first use, not on page load.
+  let _c2paInstancePromise = null;
+  function getC2paInstance() {
+    if (typeof createC2pa === "undefined") return Promise.resolve(null);
+    if (!_c2paInstancePromise) {
+      _c2paInstancePromise = createC2pa({ wasmSrc: "lib/c2pa-web/resources/c2pa_bg.wasm" })
+        .catch((err) => { console.warn("GTC: c2pa-web init failed", err); return null; });
+    }
+    return _c2paInstancePromise;
+  }
+
+  async function readC2PA(file, buffer) {
+    const bytes = new Uint8Array(buffer);
+    if (!findJumbfBox(bytes)) {
+      return { status: "absent", digital_source_type: null, validated: null, raw: null };
+    }
+
+    const c2paInst = await getC2paInstance();
+    if (!c2paInst) {
+      return { status: "present_unvalidated", digital_source_type: null, validated: null, raw: null };
+    }
+
+    let reader = null;
+    try {
+      const mimeType = file.type || "image/jpeg";
+      const blob = new Blob([buffer], { type: mimeType });
+      reader = await c2paInst.reader.fromBlob(mimeType, blob);
+
+      if (!reader) {
+        return { status: "absent", digital_source_type: null, validated: null, raw: null };
+      }
+
+      const manifestStore = await reader.manifestStore();
+      const activeManifest = await reader.activeManifest();
+      const digitalSourceType = extractSourceTypeFromManifest(activeManifest);
+      const validationState = manifestStore.validation_state || null;
+
+      return {
+        status: validationState === "Invalid" ? "invalid" : "present",
+        digital_source_type: digitalSourceType,
+        validated: validationState ? validationState !== "Invalid" : null,
+        raw: {
+          validation_state: validationState,
+          validation_status: manifestStore.validation_status || null,
+          active_manifest_label: manifestStore.active_manifest || null,
+          claim_generator: activeManifest?.claim_generator || null,
+          signature_info: activeManifest?.signature_info || null
+        }
+      };
+    } catch (err) {
+      return { status: "invalid", digital_source_type: null, validated: false, raw: String(err) };
+    } finally {
+      if (reader) { try { await reader.free(); } catch { /* already freed */ } }
+    }
+  }
+
+  function findJumbfBox(bytes) {
+    const marker = [0x6a, 0x75, 0x6d, 0x62]; // "jumb"
+    for (let i = 0; i < bytes.length - marker.length; i++) {
+      if (marker.every((b, j) => bytes[i + j] === b)) return true;
+    }
+    return false;
+  }
+
+  function extractSourceTypeFromManifest(manifest) {
+    try {
+      const assertions = manifest?.assertions || [];
+      const actionsAssertion = assertions.find(a => a.label === "c2pa.actions" || a.label?.startsWith("c2pa.actions"));
+      const actions = actionsAssertion?.data?.actions || [];
+      const withType = actions.find(a => a.digitalSourceType);
+      return withType ? withType.digitalSourceType.split("/").filter(Boolean).pop() : null;
+    } catch { return null; }
+  }
+
+  // ---- 3. XMP / EXIF ----
+  async function readXmpExif(file, buffer) {
+    const bytes = new Uint8Array(buffer);
+    const text = bytesToLatin1String(bytes);
+    const xmpMatch = text.match(/<x:xmpmeta[\s\S]*?<\/x:xmpmeta>/);
+    const rawXmp = xmpMatch ? xmpMatch[0] : null;
+
+    let tags = {};
+    let libXmp = null;
+
+    if (typeof EXIF !== "undefined") {
+      try {
+        EXIF.enableXmp();
+        await new Promise((resolve) => {
+          EXIF.getData(file, function () {
+            tags = EXIF.getAllTags(this) || {};
+            libXmp = this.xmpdata || null;
+            resolve();
+          });
+        });
+      } catch { /* fall through to raw regex result above */ }
+    }
+
+    const software = tags.Software || extractXmpField(rawXmp, "xmp:CreatorTool") || extractXmpField(rawXmp, "tiff:Software") || null;
+    const creator = extractXmpField(rawXmp, "dc:creator") || (libXmp && flattenXmpCreator(libXmp)) || null;
+
+    return {
+      xmp_present: !!rawXmp || !!libXmp,
+      software: software,
+      creator: creator,
+      generative_ai_marker: detectGenerativeAiMarker(rawXmp) || detectGenerativeAiMarker(software),
+      raw_xmp_excerpt: rawXmp ? rawXmp.slice(0, 2000) : null,
+      camera_make: tags.Make || null,
+      camera_model: tags.Model || null,
+      capture_timestamp: normalizeExifDate(tags.DateTimeOriginal || tags.DateTimeDigitized || tags.DateTime),
+      gps: buildGps(tags),
+      exif_library_loaded: typeof EXIF !== "undefined"
+    };
+  }
+
+  function flattenXmpCreator(libXmp) {
+    try {
+      const c = libXmp["dc:creator"];
+      if (!c) return null;
+      return typeof c === "string" ? c : JSON.stringify(c).slice(0, 200);
+    } catch { return null; }
+  }
+
+  function normalizeExifDate(exifDateStr) {
+    if (!exifDateStr || typeof exifDateStr !== "string") return null;
+    const m = exifDateStr.match(/^(\d{4}):(\d{2}):(\d{2}) (\d{2}:\d{2}:\d{2})$/);
+    return m ? `${m[1]}-${m[2]}-${m[3]}T${m[4]}Z` : exifDateStr;
+  }
+
+  function buildGps(tags) {
+    if (!tags.GPSLatitude || !tags.GPSLongitude) return null;
+    const toDecimal = (dms, ref) => {
+      const [d, mnt, s] = dms;
+      let dec = d + mnt / 60 + s / 3600;
+      if (ref === "S" || ref === "W") dec = -dec;
+      return dec;
+    };
+    try {
+      return {
+        latitude: toDecimal(tags.GPSLatitude, tags.GPSLatitudeRef),
+        longitude: toDecimal(tags.GPSLongitude, tags.GPSLongitudeRef),
+        raw_ref: { lat: tags.GPSLatitudeRef || null, lon: tags.GPSLongitudeRef || null }
+      };
+    } catch { return null; }
+  }
+
+  function bytesToLatin1String(bytes) {
+    let s = "";
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) s += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+    return s;
+  }
+
+  function extractXmpField(xmp, field) {
+    if (!xmp) return null;
+    const m = xmp.match(new RegExp(field + "[^>]*>([^<]*)<", "i"));
+    return m ? m[1].trim() : null;
+  }
+
+  function detectGenerativeAiMarker(text) {
+    if (!text) return false;
+    return /generative|midjourney|dall-?e|stable diffusion|firefly.*generative|ai[-_ ]generated/i.test(text);
+  }
+
+  // ---- 4. Declared classification ----
+  function deriveClassification(c2pa, meta) {
+    if (c2pa.status === "present" && c2pa.digital_source_type) {
+      const bucket = mapSourceType(c2pa.digital_source_type);
+      return bucket
+        ? { value: bucket, source: "c2pa_declared", confidence: "declared" }
+        : { value: "Undeclared", source: "c2pa_declared_unmapped", confidence: "none" };
+    }
+    if (c2pa.status === "invalid") {
+      return { value: "Undeclared", source: "c2pa_invalid", confidence: "none" };
+    }
+    if (meta.generative_ai_marker) {
+      return { value: "trainedAlgorithmicMedia", source: "xmp_software_tag", confidence: "weak" };
+    }
+    return { value: "Undeclared", source: "no_provenance_data", confidence: "none" };
+  }
+
+  function mapSourceType(iptcValue) {
+    const knownBuckets = {
+      trainedAlgorithmicMedia: "trainedAlgorithmicMedia",
+      compositeWithTrainedAlgorithmicMedia: "compositeWithTrainedAlgorithmicMedia",
+      compositeCapture: "compositeCapture",
+      digitalCapture: "digitalCapture"
+    };
+    return knownBuckets[iptcValue] || null;
+  }
+
+  // ---- 5. Heuristics (additive only, never overrides classification) ----
+  function runHeuristics(meta, c2pa) {
+    const flags = [];
+    if (!meta.xmp_present && c2pa.status === "absent") {
+      flags.push("No embedded provenance metadata of any kind.");
+    }
+    if (meta.software && /photoshop|gimp|affinity/i.test(meta.software)) {
+      flags.push(`Edited in ${meta.software} (editing tool ≠ AI generation).`);
+    }
+    return flags;
+  }
+
+  // ------------------------------------------------------------
+  // Render
+  // ------------------------------------------------------------
+  function renderReport(r) {
+    setKV("iv-file-table", [
+      ["Filename", r.file.name],
+      ["Size", `${(r.file.size_bytes / 1024).toFixed(1)} KB`],
+      ["MIME type", r.file.mime_type],
+      ["SHA-256", r.file.sha256]
+    ]);
+
+    setKV("iv-c2pa-table", [
+      ["Status", r.c2pa.status],
+      ["Digital source type", r.c2pa.digital_source_type || "—"],
+      ["Chain validated", r.c2pa.validated === null ? "—" : (r.c2pa.validated ? "Yes" : "No")]
+    ]);
+    document.getElementById("iv-c2pa-raw").innerHTML = r.c2pa.raw
+      ? `<details class="iv-raw-toggle"><summary>Raw C2PA data</summary><pre>${escapeHtml(JSON.stringify(r.c2pa.raw, null, 2))}</pre></details>`
+      : "";
+
+    setKV("iv-exif-table", [
+      ["exif-js loaded", r.metadata.exif_library_loaded ? "Yes" : "No — regex-only XMP fallback"],
+      ["XMP present", r.metadata.xmp_present ? "Yes" : "No"],
+      ["Software / creator tool", r.metadata.software || "—"],
+      ["Creator field", r.metadata.creator || "—"],
+      ["Camera make", r.metadata.camera_make || "—"],
+      ["Camera model", r.metadata.camera_model || "—"],
+      ["Capture timestamp", r.metadata.capture_timestamp || "—"],
+      ["GPS", r.metadata.gps ? `${r.metadata.gps.latitude.toFixed(5)}, ${r.metadata.gps.longitude.toFixed(5)}` : "—"],
+      ["Generative-AI marker text found", r.metadata.generative_ai_marker ? "Yes" : "No"]
+    ]);
+
+    const badge = document.getElementById("iv-classification-badge");
+    badge.textContent = r.classification.value;
+    badge.className = "status-chip " + (
+      r.classification.confidence === "declared" ? "chip-ok" :
+      r.classification.value === "Undeclared" ? "chip-info" : "chip-err"
+    );
+
+    document.getElementById("iv-classification-explainer").textContent =
+      r.classification.confidence === "declared"
+        ? "This value was read directly from a validated C2PA manifest assertion."
+        : r.classification.source === "c2pa_declared_unmapped"
+        ? `A C2PA manifest declares a digital source type ("${r.c2pa.digital_source_type}") outside GTC's four tracked categories. See the C2PA table above for the raw declared value.`
+        : r.classification.confidence === "weak"
+        ? "No C2PA data. This is a weak inference from a software/creator-tool tag only — treat as a hint, not a finding."
+        : "No provenance data was found or the manifest failed validation. This does not mean the image is or isn't AI-made — it means the file doesn't declare it.";
+
+    const list = document.getElementById("iv-heuristics-list");
+    list.innerHTML = r.heuristics.length
+      ? r.heuristics.map(h => `<li>${escapeHtml(h)}</li>`).join("")
+      : "<li>No heuristic flags triggered.</li>";
+  }
+
+  function setKV(tableId, rows) {
+    document.getElementById(tableId).innerHTML =
+      rows.map(([k, v]) => `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`).join("");
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  // ------------------------------------------------------------
+  // Export
+  // ------------------------------------------------------------
+  document.getElementById("iv-export-json-btn").addEventListener("click", () => {
+    const blob = new Blob([JSON.stringify(window._ivLastReport, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "gtc-image-verification-report.json";
+    a.click();
+  });
+  document.getElementById("iv-export-pdf-btn").addEventListener("click", () => window.print());
+
+})();
 </script>
 </body>
 </html>
