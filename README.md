@@ -95,6 +95,12 @@ See the [annotated example](examples/example-manifest.json) and the [JSON schema
 4. Commit the manifest to this repository or publish it at a stable URL.
 5. Place the GTC mark on your content per the [usage specification](SPECIFICATION.md).
 
+**Example — the mark placed on images and text blocks:**
+
+![GTC mark placed on images and text blocks, in both black and white](examples/example-image.png)
+
+The white mark sits in the top-left corner of each image (per [§4.1](SPECIFICATION.md#41-on-images)); the black mark sits at the end of each text block's final line (per [§4.2](SPECIFICATION.md#42-on-text-blocks)).
+
 ---
 
 ## Repository Structure
