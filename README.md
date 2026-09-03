@@ -174,7 +174,10 @@ This recursion is not a flaw — it is the protocol's first test case. A deploye
 
 ## Adoption
 
-If you use GTC on your content, open an issue. This repo tracks real-world use.
+### Known Adopters
+- **[Forest R.J.](https://www.linkedin.com/in/forestrj/)** — local-first Chrome
+  extension for one-click SHA-256 hashing and QR generation, built on the
+  GTC hashing model. [Post](link)
 
 ---
 
