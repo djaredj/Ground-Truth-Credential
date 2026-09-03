@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/djaredj/ground-truth-credential/schema/gtc-image-verification-schema-v0.1.json",
+  "title": "GTC Image Verification Report",
+  "description": "Output of the GTC Image Verifier tool. Reports only what a file declares (C2PA, XMP/EXIF) plus clearly separated, non-authoritative heuristic flags. Never asserts AI-generation as fact in the absence of declared provenance.",
+  "type": "object",
+  "required": ["schema_version", "generated_at", "file", "c2pa", "metadata", "classification", "heuristics", "limitations"],
+  "properties": {
+
+    "schema_version": { "type": "string", "const": "0.1" },
+
+    "generated_at": { "type": "string", "format": "date-time" },
+
+    "file": {
+      "type": "object",
+      "required": ["name", "size_bytes", "mime_type", "sha256"],
+      "properties": {
+        "name": { "type": "string" },
+        "size_bytes": { "type": "integer" },
+        "mime_type": { "type": "string" },
+        "sha256": { "type": "string", "description": "SHA-256 of the exact bytes analyzed. Can be cross-referenced against a GTC content manifest's content_hash." }
+      }
+    },
+
+    "c2pa": {
+      "type": "object",
+      "description": "Result of scanning for and, if a validator is loaded, verifying a C2PA manifest.",
+      "required": ["status", "digital_source_type", "validated"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["absent", "present", "present_unvalidated", "invalid"],
+          "description": "absent: no JUMBF/C2PA box found. present: found and validated. present_unvalidated: found but no validator library available client-side. invalid: found but signature/chain failed validation."
+        },
+        "digital_source_type": {
+          "type": ["string", "null"],
+          "description": "The raw digitalSourceType URI's final path segment, as declared in the C2PA manifest, verbatim — not restricted to GTC's four tracked buckets. See classification.value for GTC's mapped bucket, if any."
+        },
+        "validated": {
+          "type": ["boolean", "null"],
+          "description": "true/false if a validation pass ran; null if no validator was available to run one."
+        },
+        "raw": {
+          "description": "Raw manifest object or error string, for the collapsible 'Raw C2PA data' UI section. Omit or truncate for report exports intended for sharing."
+        }
+      }
+    },
+
+    "metadata": {
+      "type": "object",
+      "description": "XMP/EXIF findings. This is a metadata read, not a forensic analysis.",
+      "required": ["xmp_present", "generative_ai_marker"],
+      "properties": {
+        "xmp_present": { "type": "boolean" },
+        "software": { "type": ["string", "null"], "description": "xmp:CreatorTool or tiff:Software field, if present." },
+        "creator": { "type": ["string", "null"] },
+        "generative_ai_marker": { "type": "boolean", "description": "True if a known generative-AI tool name or phrase was found in the XMP block. A weak, string-matching signal only." },
+        "raw_xmp_excerpt": { "type": ["string", "null"], "description": "First ~2000 chars of the raw XMP packet, for transparency." },
+        "camera_make": { "type": ["string", "null"] },
+        "camera_model": { "type": ["string", "null"] },
+        "gps": {
+          "type": ["object", "null"],
+          "properties": {
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
+            "raw_ref": { "type": "object" }
+          }
+        },
+        "capture_timestamp": { "type": ["string", "null"], "description": "Normalized from EXIF's 'YYYY:MM:DD HH:MM:SS' format where possible; not guaranteed strict ISO 8601 if the source tag was malformed." },
+        "exif_library_loaded": { "type": "boolean", "description": "True if exif-js (window.EXIF) was available at scan time. False means only the raw XMP regex fallback ran — no camera/GPS/timestamp data." }
+      }
+    },
+
+    "classification": {
+      "type": "object",
+      "description": "The single declared-or-undeclared classification GTC surfaces prominently. Never derived from heuristics alone.",
+      "required": ["value", "source", "confidence"],
+      "properties": {
+        "value": {
+          "type": "string",
+          "enum": ["trainedAlgorithmicMedia", "compositeWithTrainedAlgorithmicMedia", "compositeCapture", "digitalCapture", "Undeclared"]
+        },
+        "source": {
+          "type": "string",
+          "enum": ["c2pa_declared", "c2pa_declared_unmapped", "c2pa_invalid", "xmp_software_tag", "no_provenance_data"],
+          "description": "Where the classification value came from. c2pa_declared_unmapped: a C2PA manifest declared a real digitalSourceType outside GTC's four tracked buckets — see c2pa.digital_source_type for the raw value."
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["declared", "weak", "none"],
+          "description": "declared: read from a validated C2PA assertion. weak: inferred from a metadata string match only. none: no basis; value is 'Undeclared'."
+        }
+      }
+    },
+
+    "heuristics": {
+      "type": "array",
+      "description": "Non-authoritative pattern flags. Additive context only — must never change `classification` above.",
+      "items": {
+        "type": "object",
+        "required": ["label", "weight"],
+        "properties": {
+          "label": { "type": "string" },
+          "weight": { "type": "string", "enum": ["info", "notable"], "description": "info: background context. notable: reserved for future stronger heuristics; currently unused to avoid overclaiming." }
+        }
+      }
+    },
+
+    "limitations": {
+      "type": "array",
+      "description": "Fixed, always-shown statement of what this check does not and cannot establish.",
+      "items": { "type": "string" },
+      "minItems": 1
+    }
+  }
+}
