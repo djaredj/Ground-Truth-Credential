@@ -70,12 +70,13 @@ Schema: [`schema/gtc-manifest-v0.1.json`](schema/gtc-manifest-v0.1.json)
 
 **[→ Open GTC Tools](https://djaredj.github.io/Ground-Truth-Credential/tools/)** — runs entirely in-browser, no account required.
 
-Four tabs:
+Five tabs:
 
 - **Verify** — paste text or upload any file to generate a SHA-256 hash for comparison against a manifest's `content_hash`. Look up manifests by ID or URL.
 - **Create Manifest** — fill in deployer, content, AI system, and disclosure fields; the tool generates a ready-to-commit JSON manifest.
 - **Social Post Credentialer** — credential text posts, images, video, PDFs, carousels, audio, and documents for any platform. Composites the GTC mark onto images, appends it to text, hashes files, and generates the manifest.
 - **Site Audit** — single-item audit (hash check + disclosure validation + schema check) and bulk spreadsheet audit (CSV import/export, row-by-row status, full audit report download).
+- **Image Verifier** — reads an image's own declared provenance: parses any C2PA manifest (via `@contentauth/c2pa-web`, WASM) and XMP/EXIF metadata (via `exif-js`) to report its digital source type — `trainedAlgorithmicMedia`, `compositeWithTrainedAlgorithmicMedia`, `compositeCapture`, or `digitalCapture`. Absent metadata is reported as "Undeclared," never inferred as evidence of AI generation. A handful of clearly-labeled, non-authoritative heuristic flags are shown separately and never affect the declared classification. Everything — including C2PA validation — runs client-side; nothing is uploaded. See [`schema/gtc-image-verification-schema-v0.1.json`](schema/gtc-image-verification-schema-v0.1.json) for the report format.
 
 ### Reading a GTC manifest manually
 
@@ -104,7 +105,8 @@ ground-truth-credential/
 ├── LICENSE                      ← CC BY 4.0
 ├── SPECIFICATION.md             ← Mark usage specification
 ├── schema/
-│   └── gtc-manifest-v0.1.json  ← JSON Schema for disclosure manifests
+│   ├── gtc-manifest-v0.1.json               ← JSON Schema for disclosure manifests
+│   └── gtc-image-verification-schema-v0.1.json  ← JSON Schema for Image Verifier reports
 ├── mark/
 │   ├── gtc-symbol-black.svg    ← Vector master, black on light
 │   ├── gtc-symbol-white.svg    ← Vector master, white on dark
@@ -116,9 +118,19 @@ ground-truth-credential/
 │   ├── ...                        Translator publication archive
 │   └── glasswing-014.json
 ├── tools/
-│   └── index.html              ← GTC Tools: Verify, Create Manifest,
-│                                  Social Post Credentialer, Site Audit
-│                                  (GitHub Pages, runs entirely in-browser)
+│   ├── index.html              ← GTC Tools: Verify, Create Manifest,
+│   │                              Social Post Credentialer, Site Audit,
+│   │                              Image Verifier
+│   │                              (GitHub Pages, runs entirely in-browser)
+│   └── lib/                    ← Self-hosted dependencies (no CDN calls)
+│       ├── exif.js             ← XMP/EXIF parsing (exif-js)
+│       └── c2pa-web/           ← C2PA manifest reading (WASM, runs in a Worker)
+│           ├── index.js
+│           ├── c2pa-CL7pqSPf.js
+│           ├── c2pa_worker.js
+│           ├── highgain.js
+│           └── resources/
+│               └── c2pa_bg.wasm
 ├── verify/
 │   └── index.html              ← Redirect to tools/ (legacy URL support)
 └── examples/
